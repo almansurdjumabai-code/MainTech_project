@@ -192,3 +192,53 @@ def test_review_clears_flag(monkeypatch):
         assert "C8" not in out["result"]["review_criteria"]
         s = client.get("/stats").json()
         assert "review_rate" in s and "agreement_rate" in s
+
+
+# ---------- граничные случаи ----------
+
+@pytest.mark.parametrize("transcript", [
+    [],                                                                              # пустой транскрипт
+    [{"timestamp": "00:00", "speaker": "system", "text": "Чат создан."}],            # только системное событие
+    [{"timestamp": "00:00", "speaker": "client", "text": "Здравствуйте, почему не приходит вывод?"},
+     {"timestamp": "00:30", "speaker": "bot", "text": "Перевожу на оператора."},
+     {"timestamp": "05:00", "speaker": "system", "text": "Клиент покинул чат."}],    # эскалация, оператор не пришёл
+    [{"timestamp": "00:00", "speaker": "client", "text": ""},
+     {"timestamp": "00:05", "speaker": "operator", "text": "   "}],                  # пустые реплики
+])
+def test_degenerate_transcripts_do_not_crash(transcript):
+    conv = {"conversation_id": "edge", "language": "RU", "channel": "agent chat", "transcript": transcript}
+    res = evaluate_conversation(conv, CHECKLIST, judges.RuleJudge())
+    assert len(res["criteria"]) == 8
+    assert res["overall"] is None or 0 <= res["overall"] <= 100
+    # оператор ничего не сделал -> его не хвалят за действия бота/системы
+    c1 = crit_map(res)["C1"]
+    assert c1["answer"] == "NO"
+
+
+def test_bot_and_system_turns_are_not_credited_to_operator():
+    conv = {"conversation_id": "bot", "language": "RU", "channel": "agent chat", "transcript": [
+        {"timestamp": "00:00", "speaker": "bot", "text": "Здравствуйте! Меня зовут AIM. До свидания, хорошего дня!"},
+        {"timestamp": "00:05", "speaker": "client", "text": "Как пополнить счёт картой?"},
+        {"timestamp": "00:40", "speaker": "operator", "text": "Откройте приложение, раздел «Пополнить», выберите «Картой»."},
+    ]}
+    c = crit_map(evaluate_conversation(conv, CHECKLIST, judges.RuleJudge()))
+    assert c["C1"]["answer"] == "NO"   # приветствие бота не засчитано оператору
+    assert c["C7"]["answer"] == "NO"   # прощание бота не засчитано оператору
+
+
+def test_long_conversation_is_fast():
+    turns = []
+    for i in range(400):
+        turns.append({"timestamp": f"{i // 60:02d}:{i % 60:02d}", "speaker": "client" if i % 2 else "operator",
+                      "text": "Здравствуйте, меня зовут Алия. Уточните, пожалуйста, номер заявки?" if i == 0 else f"Сообщение {i} по заявке"})
+    conv = {"conversation_id": "long", "language": "RU", "channel": "agent chat", "transcript": turns}
+    import time
+    t0 = time.time()
+    res = evaluate_conversation(conv, CHECKLIST, judges.RuleJudge())
+    assert time.time() - t0 < 2 and res["overall"] is not None
+
+
+def test_live_smoke_skips_without_key(capsys):
+    from ml import live_smoke
+    assert live_smoke.main([]) == 2
+    assert "SKIP" in capsys.readouterr().out

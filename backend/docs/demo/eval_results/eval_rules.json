@@ -1,0 +1,1069 @@
+[
+  {
+    "mode": "rules",
+    "judge": "rules",
+    "model": "rule-based-v1",
+    "rows": [
+      {
+        "conversation_id": "p1-ru-001",
+        "language": "RU",
+        "criterion": "C1",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-001",
+        "language": "RU",
+        "criterion": "C2",
+        "gold": "NA",
+        "pred": "NA",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-001",
+        "language": "RU",
+        "criterion": "C3",
+        "gold": "NA",
+        "pred": "NA",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-001",
+        "language": "RU",
+        "criterion": "C4",
+        "gold": "20",
+        "pred": "20",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-001",
+        "language": "RU",
+        "criterion": "C5",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-001",
+        "language": "RU",
+        "criterion": "C6",
+        "gold": "10",
+        "pred": "10",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-001",
+        "language": "RU",
+        "criterion": "C8",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-005",
+        "language": "RU",
+        "criterion": "C1",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-005",
+        "language": "RU",
+        "criterion": "C2",
+        "gold": "NA",
+        "pred": "NO",
+        "ok": false,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-005",
+        "language": "RU",
+        "criterion": "C3",
+        "gold": "NA",
+        "pred": "NA",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-005",
+        "language": "RU",
+        "criterion": "C4",
+        "gold": "20",
+        "pred": "15",
+        "ok": false,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-005",
+        "language": "RU",
+        "criterion": "C5",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-005",
+        "language": "RU",
+        "criterion": "C6",
+        "gold": "4",
+        "pred": "4",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-005",
+        "language": "RU",
+        "criterion": "C7",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-005",
+        "language": "RU",
+        "criterion": "C8",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-009",
+        "language": "RU",
+        "criterion": "C1",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-009",
+        "language": "RU",
+        "criterion": "C2",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-009",
+        "language": "RU",
+        "criterion": "C3",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-009",
+        "language": "RU",
+        "criterion": "C4",
+        "gold": "10",
+        "pred": "10",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-009",
+        "language": "RU",
+        "criterion": "C5",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-009",
+        "language": "RU",
+        "criterion": "C6",
+        "gold": "4",
+        "pred": "4",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-009",
+        "language": "RU",
+        "criterion": "C7",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-013",
+        "language": "RU",
+        "criterion": "C1",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-013",
+        "language": "RU",
+        "criterion": "C2",
+        "gold": "NA",
+        "pred": "NA",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-013",
+        "language": "RU",
+        "criterion": "C3",
+        "gold": "NA",
+        "pred": "NA",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-013",
+        "language": "RU",
+        "criterion": "C4",
+        "gold": "20",
+        "pred": "20",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-013",
+        "language": "RU",
+        "criterion": "C5",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-013",
+        "language": "RU",
+        "criterion": "C6",
+        "gold": "10",
+        "pred": "10",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-013",
+        "language": "RU",
+        "criterion": "C7",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-013",
+        "language": "RU",
+        "criterion": "C8",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-014",
+        "language": "RU",
+        "criterion": "C1",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-014",
+        "language": "RU",
+        "criterion": "C2",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-014",
+        "language": "RU",
+        "criterion": "C3",
+        "gold": "NA",
+        "pred": "NA",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-014",
+        "language": "RU",
+        "criterion": "C4",
+        "gold": "20",
+        "pred": "20",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-014",
+        "language": "RU",
+        "criterion": "C5",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-014",
+        "language": "RU",
+        "criterion": "C6",
+        "gold": "7",
+        "pred": "7",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-014",
+        "language": "RU",
+        "criterion": "C8",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-023",
+        "language": "RU",
+        "criterion": "C1",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-023",
+        "language": "RU",
+        "criterion": "C2",
+        "gold": "NA",
+        "pred": "NA",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-023",
+        "language": "RU",
+        "criterion": "C3",
+        "gold": "NA",
+        "pred": "NA",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-023",
+        "language": "RU",
+        "criterion": "C4",
+        "gold": "20",
+        "pred": "20",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-023",
+        "language": "RU",
+        "criterion": "C5",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-023",
+        "language": "RU",
+        "criterion": "C6",
+        "gold": "10",
+        "pred": "10",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-ru-023",
+        "language": "RU",
+        "criterion": "C8",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": true,
+        "review_reasons": [
+          "critical_flag"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-kz-008",
+        "language": "KZ",
+        "criterion": "C1",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-kz-008",
+        "language": "KZ",
+        "criterion": "C2",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-kz-008",
+        "language": "KZ",
+        "criterion": "C3",
+        "gold": "NA",
+        "pred": "NA",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-kz-008",
+        "language": "KZ",
+        "criterion": "C4",
+        "gold": "20",
+        "pred": "20",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-kz-008",
+        "language": "KZ",
+        "criterion": "C5",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-kz-008",
+        "language": "KZ",
+        "criterion": "C6",
+        "gold": "7",
+        "pred": "7",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-kz-008",
+        "language": "KZ",
+        "criterion": "C7",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-kz-008",
+        "language": "KZ",
+        "criterion": "C8",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-kz-015",
+        "language": "KZ",
+        "criterion": "C1",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-kz-015",
+        "language": "KZ",
+        "criterion": "C2",
+        "gold": "NA",
+        "pred": "NA",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-kz-015",
+        "language": "KZ",
+        "criterion": "C3",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-kz-015",
+        "language": "KZ",
+        "criterion": "C4",
+        "gold": "10",
+        "pred": "10",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-kz-015",
+        "language": "KZ",
+        "criterion": "C7",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-en-013",
+        "language": "EN",
+        "criterion": "C1",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-en-013",
+        "language": "EN",
+        "criterion": "C2",
+        "gold": "NA",
+        "pred": "NA",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-en-013",
+        "language": "EN",
+        "criterion": "C3",
+        "gold": "NA",
+        "pred": "NA",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-en-013",
+        "language": "EN",
+        "criterion": "C4",
+        "gold": "20",
+        "pred": "20",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-en-013",
+        "language": "EN",
+        "criterion": "C5",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-en-013",
+        "language": "EN",
+        "criterion": "C6",
+        "gold": "10",
+        "pred": "10",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-en-013",
+        "language": "EN",
+        "criterion": "C7",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-en-013",
+        "language": "EN",
+        "criterion": "C8",
+        "gold": "YES",
+        "pred": "YES",
+        "ok": true,
+        "needs_review": true,
+        "review_reasons": [
+          "critical_flag"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-en-015",
+        "language": "EN",
+        "criterion": "C1",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-en-015",
+        "language": "EN",
+        "criterion": "C2",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-en-015",
+        "language": "EN",
+        "criterion": "C3",
+        "gold": "NA",
+        "pred": "NA",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      },
+      {
+        "conversation_id": "p1-en-015",
+        "language": "EN",
+        "criterion": "C8",
+        "gold": "NO",
+        "pred": "NO",
+        "ok": true,
+        "needs_review": false,
+        "review_reasons": [],
+        "confidence": "medium"
+      }
+    ],
+    "cost_usd": 0.0,
+    "cost_per_conversation": 0.0,
+    "latency_sec_avg": 0.001,
+    "usage": {
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_write_tokens": 0,
+      "cache_read_tokens": 0,
+      "llm_calls": 0,
+      "result_cache_hits": 0,
+      "llm_fallbacks": 0
+    },
+    "conversations": 10,
+    "metrics": {
+      "n": 69,
+      "accuracy": 0.9710144927536232,
+      "criteria": {
+        "C1": {
+          "n": 10,
+          "accuracy": 1.0,
+          "per_class": {
+            "NO": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 3
+            },
+            "YES": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 7
+            }
+          },
+          "macro_f1": 1.0,
+          "confusion": {
+            "NO": {
+              "NO": 3
+            },
+            "YES": {
+              "YES": 7
+            }
+          }
+        },
+        "C2": {
+          "n": 10,
+          "accuracy": 0.9,
+          "per_class": {
+            "NA": {
+              "precision": 1.0,
+              "recall": 0.8333333333333334,
+              "f1": 0.9090909090909091,
+              "support": 6
+            },
+            "NO": {
+              "precision": 0.75,
+              "recall": 1.0,
+              "f1": 0.8571428571428571,
+              "support": 3
+            },
+            "YES": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 1
+            }
+          },
+          "macro_f1": 0.9220779220779219,
+          "confusion": {
+            "NA": {
+              "NA": 5,
+              "NO": 1
+            },
+            "NO": {
+              "NO": 3
+            },
+            "YES": {
+              "YES": 1
+            }
+          }
+        },
+        "C3": {
+          "n": 10,
+          "accuracy": 1.0,
+          "per_class": {
+            "NA": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 8
+            },
+            "NO": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 2
+            }
+          },
+          "macro_f1": 1.0,
+          "confusion": {
+            "NA": {
+              "NA": 8
+            },
+            "NO": {
+              "NO": 2
+            }
+          }
+        },
+        "C4": {
+          "n": 9,
+          "accuracy": 0.8888888888888888,
+          "per_class": {
+            "10": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 2
+            },
+            "15": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "support": 0
+            },
+            "20": {
+              "precision": 1.0,
+              "recall": 0.8571428571428571,
+              "f1": 0.923076923076923,
+              "support": 7
+            }
+          },
+          "macro_f1": 0.9615384615384615,
+          "confusion": {
+            "10": {
+              "10": 2
+            },
+            "15": {},
+            "20": {
+              "20": 6,
+              "15": 1
+            }
+          }
+        },
+        "C5": {
+          "n": 8,
+          "accuracy": 1.0,
+          "per_class": {
+            "NO": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 1
+            },
+            "YES": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 7
+            }
+          },
+          "macro_f1": 1.0,
+          "confusion": {
+            "NO": {
+              "NO": 1
+            },
+            "YES": {
+              "YES": 7
+            }
+          }
+        },
+        "C6": {
+          "n": 8,
+          "accuracy": 1.0,
+          "per_class": {
+            "10": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 4
+            },
+            "4": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 2
+            },
+            "7": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 2
+            }
+          },
+          "macro_f1": 1.0,
+          "confusion": {
+            "10": {
+              "10": 4
+            },
+            "4": {
+              "4": 2
+            },
+            "7": {
+              "7": 2
+            }
+          }
+        },
+        "C7": {
+          "n": 6,
+          "accuracy": 1.0,
+          "per_class": {
+            "NO": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 2
+            },
+            "YES": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 4
+            }
+          },
+          "macro_f1": 1.0,
+          "confusion": {
+            "NO": {
+              "NO": 2
+            },
+            "YES": {
+              "YES": 4
+            }
+          }
+        },
+        "C8": {
+          "n": 8,
+          "accuracy": 1.0,
+          "per_class": {
+            "NO": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 6
+            },
+            "YES": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support": 2
+            }
+          },
+          "macro_f1": 1.0,
+          "confusion": {
+            "NO": {
+              "NO": 6
+            },
+            "YES": {
+              "YES": 2
+            }
+          }
+        }
+      },
+      "macro_f1_mean": 0.9854520479520479,
+      "accuracy_by_language": {
+        "EN": {
+          "accuracy": 1.0,
+          "n": 12
+        },
+        "KZ": {
+          "accuracy": 1.0,
+          "n": 13
+        },
+        "RU": {
+          "accuracy": 0.9545454545454546,
+          "n": 44
+        }
+      },
+      "critical": {
+        "n": 8,
+        "gold_yes": 2,
+        "false_pass": 0,
+        "false_fail": 0
+      },
+      "na": {
+        "gold_na": 14,
+        "pred_na": 13,
+        "precision": 1.0,
+        "recall": 0.9285714285714286
+      },
+      "false_yes": 0,
+      "false_no": 0,
+      "review": {
+        "review_rate": 0.02898550724637683,
+        "auto_accuracy": 0.9701492537313433,
+        "errors_total": 2,
+        "errors_sent_to_review": 0
+      }
+    }
+  }
+]
