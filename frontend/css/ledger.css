@@ -1,0 +1,86 @@
+/* ═══════════════ LEDGER — flat statement-style panels and a less generic type system ═══════════════
+   Replaces the "glowing rounded card" look (cursor spotlight, spinning conic border, mint halos, lift on hover)
+   with the language of a broker's statement: flat sheets, hairline rules, square-ish corners, numbers set in Geologica.
+   Fonts: Golos Text (UI), Geologica (figures), Martian Mono (IDs, time, code). Page headlines stay Onest. Loaded last. */
+
+.cqa-root { --cqa-r-card: 6px; --cqa-r-media: 8px; font-stretch: 87.5%; }
+
+/* ── Figures ── */
+.cqa-root :is(.cqa-score__num, .cqa-kpi__val, .cqa-preview__num, .cqa-batch__count, .cqa-result-swap__new, .cqa-result-swap__old,
+  .cqa-sec__val, .cqa-weight-ring__val, .cqa-crit__pts, .cqa-score-cell, .cqa-ticker__item b, .cqa-hero__val, .cqa-savings__val, .cqa-crit__num) {
+  font-family: var(--cqa-font-num); font-weight: 300; letter-spacing: -.03em; font-variant-numeric: tabular-nums;
+}
+.cqa-root :is(.cqa-score-cell, .cqa-ticker__item b, .cqa-crit__pts) { font-weight: 450; letter-spacing: -.01em; }
+.cqa-root .cqa-crit__num { color: var(--cqa-green-text); -webkit-text-stroke: 0; font-weight: 500; font-size: 15px; }
+.cqa-root .cqa-heat__cell { font-family: var(--cqa-font-num); font-weight: 500; letter-spacing: 0; }
+.cqa-root .cqa-odo__col { width: .64em; }
+.cqa-root .cqa-odo__sep { width: .26em; }
+.cqa-root :is(.cqa-hero, .cqa-savings__val, .cqa-ai-result__nums) .cqa-odo__col { width: .64em; }
+.cqa-root :is(.cqa-hero, .cqa-savings__val, .cqa-ai-result__nums) .cqa-odo__sep { width: .26em; }
+/* Martian Mono runs large: keep it a quiet secondary voice */
+.cqa-root :is(.cqa-mono, code, kbd, .cqa-json) { font-size: .9em; letter-spacing: 0; }
+
+/* ── Panels: flat sheets with one hairline, no glow ── */
+.cqa-root :is(.cqa-card, .cqa-crit, .cqa-kpi, .cqa-queue__item, .cqa-item, .cqa-sec, .cqa-calc, .cqa-fragment) {
+  border-radius: var(--cqa-r-card); box-shadow: none; background: var(--cqa-surface); border: 1px solid var(--cqa-line);
+}
+.cqa-root :is(.cqa-card, .cqa-crit, .cqa-kpi, .cqa-queue__item, .cqa-sec)::before,
+.cqa-root :is(.cqa-card, .cqa-crit, .cqa-queue__item)::after { content: none; }
+.cqa-root :is(.cqa-card, .cqa-crit, .cqa-kpi, .cqa-queue__item, .cqa-sec, .cqa-item):hover,
+.cqa-root :is(.cqa-card--hover, .cqa-crit, .cqa-queue__item):hover {
+  transform: none; box-shadow: none; border-color: var(--cqa-line-strong); background: var(--cqa-surface);
+}
+.cqa-root :is(.cqa-card, .cqa-crit, .cqa-kpi, .cqa-queue__item, .cqa-sec, .cqa-item) { transition: border-color 160ms var(--cqa-ease), background-color 160ms var(--cqa-ease); }
+.cqa-root .cqa-card { padding: 24px; }
+
+/* Panel heading sits on a rule, like a statement section */
+.cqa-root .cqa-card > :is(h2, h3):first-child,
+.cqa-root .cqa-card > .cqa-row:first-child:has(> :is(h2, h3)) {
+  padding-bottom: 14px; margin-bottom: 2px; border-bottom: 1px solid var(--cqa-line);
+}
+
+/* ── KPI row: one ruled strip instead of five floating tiles ── */
+.cqa-root .cqa-kpis {
+  gap: 0; overflow: hidden; border: 1px solid var(--cqa-line); border-radius: var(--cqa-r-card); background: var(--cqa-surface);
+}
+.cqa-root .cqa-kpi {
+  border: 0; border-radius: 0; background: transparent; min-height: 150px;
+  box-shadow: -1px 0 0 var(--cqa-line), 0 -1px 0 var(--cqa-line);
+}
+.cqa-root .cqa-kpi:hover { border: 0; background: var(--cqa-mist); box-shadow: -1px 0 0 var(--cqa-line), 0 -1px 0 var(--cqa-line); }
+.cqa-root a.cqa-kpi:focus-visible { box-shadow: inset 0 0 0 2px var(--cqa-green); }
+.cqa-root .cqa-kpi--vault, .cqa-root .cqa-kpi--vault:hover { background: var(--cqa-green-deep); color: #fff; }
+.cqa-root[data-theme="dark"] .cqa-kpi--vault, .cqa-root[data-theme="dark"] .cqa-kpi--vault:hover { background: #0C3A23; }
+.cqa-root .cqa-kpi--vault :is(.cqa-eyebrow, .cqa-kpi__sub, .cqa-mute, .cqa-muted) { color: rgba(255, 255, 255, .68); }
+
+/* ── Dark "vault" blocks: solid, no orbs or halos ── */
+.cqa-root .cqa-vault { background: var(--cqa-brand-bg); border: 1px solid rgba(255, 255, 255, .08); box-shadow: none; border-radius: var(--cqa-r-media); }
+.cqa-root[data-theme="dark"] .cqa-vault { background: #0A2E1C; }
+.cqa-root .cqa-vault::before, .cqa-root .cqa-vault::after { content: none; }
+.cqa-root .cqa-vault:hover, .cqa-root .cqa-kpi--vault:hover { box-shadow: none; }
+.cqa-root .cqa-gauge__bar { filter: none; }
+.cqa-root .cqa-score__ring::before { content: none; }
+
+/* ── Buttons: solid fills, no glow, no sheen sweep ── */
+.cqa-root .cqa-btn--primary { background: var(--cqa-green-deep); box-shadow: none; }
+.cqa-root .cqa-btn--primary:hover:not(:disabled) { background: #136B3D; box-shadow: none; }
+.cqa-root[data-theme="dark"] .cqa-btn--primary { background: var(--cqa-green); color: #04100A; }
+.cqa-root[data-theme="dark"] .cqa-btn--primary:hover:not(:disabled) { background: #63C24E; }
+.cqa-root :is(.cqa-btn--primary, .cqa-btn--vault)::after { content: none; }
+.cqa-root .cqa-btn--secondary { box-shadow: none; }
+.cqa-root :is(.cqa-btn--secondary, .cqa-btn--line):hover:not(:disabled) { box-shadow: none; border-color: var(--cqa-line-strong); background: var(--cqa-mist); }
+.cqa-root .cqa-btn, .cqa-root .cqa-chip-filter, .cqa-root .cqa-seg__btn { border-radius: 6px; }
+.cqa-root :is(.cqa-input, .cqa-select, .cqa-textarea, .cqa-input--sm, .cqa-select--sm) { border-radius: 6px; }
+
+/* ── Table rows: a plain tint on hover ── */
+.cqa-root .cqa-table tbody tr:hover { box-shadow: none; background: var(--cqa-mist); }
+
+/* ── Heatmap & progress: flat fills ── */
+.cqa-root .cqa-heat__cell { border-radius: 4px; }
+.cqa-root .cqa-bar { border-radius: 2px; }
+.cqa-root .cqa-bar__fill { background: var(--cqa-green); }
+
+/* ── Modals, toasts, editor bar: same sheet language ── */
+.cqa-root .cqa-modal { border-radius: var(--cqa-r-media); }
+.cqa-root .cqa-toast { border-radius: var(--cqa-r-card); }
+.cqa-root .cqa-editor__bar { border-radius: var(--cqa-r-card); box-shadow: none; }

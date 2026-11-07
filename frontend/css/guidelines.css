@@ -1,0 +1,105 @@
+/* ═══════════════ GUIDELINES — fixes from the Vercel Web Interface Guidelines review ═══════════════
+   Loaded last. Scoped under .cqa-root. */
+
+/* Skip link: hidden until keyboard focus */
+.cqa-root .cqa-skip {
+  position: fixed; left: 16px; top: 12px; z-index: 300; padding: 10px 16px; border-radius: 12px;
+  background: #04100A; color: var(--cqa-lime); font-weight: 650; text-decoration: none;
+  transform: translateY(-160%); transition: transform 200ms var(--cqa-ease);
+}
+.cqa-root .cqa-skip:focus-visible { transform: none; box-shadow: var(--cqa-focus); }
+
+/* Motion pause control (ticker, aurora, illustrations loop > 5s) */
+.cqa-root .cqa-ticker-wrap { position: relative; }
+.cqa-root .cqa-motion-toggle {
+  position: absolute; right: 34px; top: calc(14px + 18px); transform: translateY(-50%); z-index: 2;
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(255, 255, 255, .1); color: var(--cqa-lime); cursor: pointer;
+}
+.cqa-root .cqa-motion-toggle:hover { background: rgba(184, 242, 138, .22); }
+.cqa-root .cqa-motion-toggle:focus-visible { box-shadow: var(--cqa-focus); border-radius: 50%; }
+.cqa-root .cqa-ticker { padding-right: 44px; }
+.cqa-root .cqa-ticker:hover .cqa-ticker__track, .cqa-root .cqa-ticker-wrap:focus-within .cqa-ticker__track { animation-play-state: paused; }
+.cqa-root.cqa-motion-paused :is(.cqa-ticker__track, .cqa-art__float, .a-wave, .a-arrow, .cqa-dot--on, .cqa-brand__mark::before),
+.cqa-root.cqa-motion-paused .cqa-app::before { animation-play-state: paused !important; }
+
+/* Touch: no double-tap zoom delay, branded tap highlight */
+.cqa-root :is(a, button, input, select, textarea, label, summary, [role="button"], [role="tab"]) {
+  touch-action: manipulation; -webkit-tap-highlight-color: rgba(81, 175, 61, .18);
+}
+
+/* Scroll containment inside overlays and inner scrollers */
+.cqa-root :is(.cqa-modal, .cqa-cardpage__scroll, .cqa-json, .cqa-table-wrap) { overscroll-behavior: contain; }
+
+/* Headings / anchors are never hidden under the sticky header */
+.cqa-root :is(h1, h2, h3, [id]) { scroll-margin-top: calc(var(--cqa-header-h) + 24px); }
+
+/* Safe areas (notches, home indicator) */
+.cqa-root .cqa-toasts { right: calc(24px + env(safe-area-inset-right)); bottom: calc(24px + env(safe-area-inset-bottom)); }
+.cqa-root .cqa-tour, .cqa-root .cqa-tour-fab { left: calc(24px + env(safe-area-inset-left)); bottom: calc(24px + env(safe-area-inset-bottom)); }
+.cqa-root .cqa-header { padding-left: calc(24px + env(safe-area-inset-left)); padding-right: calc(24px + env(safe-area-inset-right)); }
+
+/* Mobile inputs ≥16px — prevents iOS focus zoom */
+@media (max-width: 760px), (pointer: coarse) {
+  .cqa-root :is(.cqa-input, .cqa-select, .cqa-textarea, .cqa-input--sm, .cqa-select--sm) { font-size: 16px; }
+}
+@media (max-width: 1100px) {
+  .cqa-root .cqa-panel-grid { grid-template-columns: minmax(0, 1fr); }
+  .cqa-root .cqa-panel-grid > * { min-width: 0; }
+}
+
+/* Touch targets ≥44px on coarse pointers */
+@media (pointer: coarse) {
+  .cqa-root :is(.cqa-btn--xs, .cqa-btn--sm, .cqa-seg__btn, .cqa-tab, .cqa-chip-filter, .cqa-evidence) { min-height: 44px; }
+  .cqa-root .cqa-btn--icon:is(.cqa-btn--sm, .cqa-btn--xs) { min-width: 44px; }
+}
+
+/* Row checkbox: the whole cell is the hit target */
+.cqa-root .cqa-hit {
+  display: inline-grid; place-items: center; width: 40px; height: 40px; margin: -10px -8px; border-radius: 10px; cursor: pointer;
+}
+.cqa-root .cqa-hit:hover { background: var(--cqa-mist); }
+.cqa-root .cqa-hit input { width: 18px; height: 18px; margin: 0; accent-color: var(--cqa-green-deep); cursor: pointer; }
+
+/* Status is never colour-only: keep the online/offline word visible */
+@media (max-width: 1500px) { .cqa-root .cqa-source__label { display: inline; } }
+
+/* Loading buttons: spinner + original label */
+.cqa-root .cqa-btn.is-loading { cursor: progress; opacity: .85; }
+.cqa-root .cqa-btn.is-loading::before {
+  content: ""; flex: none; width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid currentColor; border-right-color: transparent; animation: cqa-spin .7s linear infinite;
+}
+
+/* Animate compositor-friendly properties only (no layout, no shadow tweening) */
+.cqa-root :is(.cqa-card, .cqa-crit, .cqa-kpi, .cqa-queue__item, .cqa-sec, .cqa-item) { transition: transform 220ms var(--cqa-expo), opacity 200ms var(--cqa-ease), background-color var(--cqa-t); }
+.cqa-root .cqa-btn { transition: transform 200ms var(--cqa-expo), opacity 200ms, background-color var(--cqa-t), color var(--cqa-t); }
+.cqa-root :is(.cqa-input, .cqa-select, .cqa-textarea) { transition: background-color var(--cqa-t-fast); }
+.cqa-root .cqa-stack__seg { transition: none; }
+.cqa-root .cqa-calc[open] [data-after] { animation: cqa-after-in 900ms var(--cqa-expo) both; transform-origin: left center; }
+@keyframes cqa-after-in { from { opacity: .25; transform: scaleX(.92); } to { opacity: 1; transform: none; } }
+.cqa-root .cqa-secgroup__drop { transition: background-color var(--cqa-t-fast); }
+.cqa-root .cqa-evidence { transition: transform 200ms var(--cqa-expo), background-color var(--cqa-t); }
+
+/* Drag & drop: no accidental text selection */
+.cqa-root .cqa-dragging, .cqa-root .cqa-dragging * { user-select: none; -webkit-user-select: none; }
+
+/* Dashboard navigation is real links now */
+.cqa-root .cqa-chart__link { outline: none; cursor: pointer; }
+.cqa-root .cqa-chart__link:hover .cqa-chart__hit, .cqa-root .cqa-chart__link:focus-visible .cqa-chart__hit { fill: rgba(81, 175, 61, .1); }
+.cqa-root .cqa-chart__link:focus-visible .cqa-chart__hit { stroke: var(--cqa-green); stroke-width: 1.5; }
+.cqa-root a.cqa-kpi { color: inherit; text-decoration: none; }
+.cqa-root a.cqa-heat__cell, .cqa-root a.cqa-heat__head { text-decoration: none; }
+.cqa-root a.cqa-heat__head { color: var(--cqa-mute); }
+.cqa-root a.cqa-heat__cell:focus-visible, .cqa-root a.cqa-heat__head:focus-visible { box-shadow: var(--cqa-focus); border-radius: 10px; }
+
+/* "Show more" under the table */
+.cqa-root .cqa-more { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 18px; }
+
+/* ── impeccable polish: browser surfaces belong to the palette ── */
+.cqa-root { caret-color: var(--cqa-green); accent-color: var(--cqa-green-deep); --cqa-heat-ink-strong: #04100A; }
+.cqa-root[data-theme="dark"] { accent-color: var(--cqa-green); }
+.cqa-root a { text-underline-offset: .2em; text-decoration-thickness: from-font; }
+.cqa-root :is(input, textarea)::placeholder { color: var(--cqa-mute); opacity: 1; }
+.cqa-root .cqa-modal__meta { font: 500 12px/1.4 var(--cqa-font-mono); color: var(--cqa-mute); overflow-wrap: anywhere; }
+.cqa-root .cqa-page__title > .cqa-display { margin-top: 0; }

@@ -1,0 +1,158 @@
+/* ═══════════════ CANVAS — no boxes: an open editorial layout that moves ═══════════════
+   Sections sit on the page like columns in a printed annual report: a ruled top edge that draws itself in,
+   a green tab that runs the full width on hover. List rows (criteria, checklist items, appeals) lift off the page
+   as a sheet with a real shadow on hover. Scroll drives the motion (view timelines); IO reveal is the fallback.
+   Loaded last; overrides ledger.css. */
+
+/* ── Sections: no fill, no frame ── */
+.cqa-root .cqa-card:not(.cqa-modal .cqa-card):not(.cqa-preview) {
+  background: transparent; border: 0; border-radius: 0; box-shadow: none; padding: 30px 0 8px; overflow: visible;
+}
+.cqa-root .cqa-card:not(.cqa-modal .cqa-card):not(.cqa-preview)::before,
+.cqa-root .cqa-card:not(.cqa-modal .cqa-card):not(.cqa-preview)::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; pointer-events: none; transform-origin: 0 50%; border-radius: 0; z-index: 0;
+}
+/* the ruled edge */
+.cqa-root .cqa-card:not(.cqa-modal .cqa-card):not(.cqa-preview)::before { height: 1px; background: var(--cqa-line-strong); inset: 0 0 auto 0; opacity: 1; mask: none; }
+/* the green tab: short at rest, runs the full width on hover */
+.cqa-root .cqa-card:not(.cqa-modal .cqa-card):not(.cqa-preview)::after {
+  height: 3px; top: -1px; background: var(--cqa-green); transform: scaleX(.07); opacity: 1; padding: 0; mask: none; -webkit-mask: none;
+  transition: transform 700ms var(--cqa-expo);
+}
+.cqa-root .cqa-card:not(.cqa-modal .cqa-card):not(.cqa-preview):hover::after { transform: scaleX(1); animation: none; }
+.cqa-root .cqa-card:not(.cqa-modal .cqa-card):not(.cqa-preview):hover { background: transparent; border: 0; }
+.cqa-root .cqa-card > :is(h2, h3):first-child,
+.cqa-root .cqa-card > .cqa-row:first-child:has(> :is(h2, h3)) { border-bottom: 0; padding-bottom: 6px; }
+.cqa-root .cqa-card :is(h2.cqa-h3, h3.cqa-h3) { font-size: 21px; font-weight: 680; letter-spacing: -.025em; }
+.cqa-root .cqa-card--line:not(.cqa-modal .cqa-card) { background: transparent; }
+
+/* breathing room between open sections */
+.cqa-root .cqa-dash__grid { column-gap: 56px; row-gap: 48px; }
+.cqa-root .cqa-panel-grid { column-gap: 56px; row-gap: 32px; }
+
+/* The live preview in the checklist editor stays a sheet (it floats, sticky) */
+.cqa-root .cqa-preview { border-radius: 10px; box-shadow: 0 2px 6px rgba(0, 0, 0, .12), 0 30px 60px -28px rgba(0, 0, 0, .55); }
+
+/* ── KPI / masthead strip: open, ruled; hover floods the cell with deep green from the bottom ── */
+.cqa-root .cqa-kpis { background: transparent; border: 0; border-top: 1px solid var(--cqa-line-strong); border-bottom: 1px solid var(--cqa-line); border-radius: 0; overflow: visible; }
+.cqa-root .cqa-kpi { box-shadow: none; background: transparent; isolation: isolate; overflow: hidden; transition: color 300ms var(--cqa-ease); }
+.cqa-root .cqa-kpi + .cqa-kpi { box-shadow: -1px 0 0 var(--cqa-line); }
+.cqa-root .cqa-kpi::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; background: var(--cqa-green-deep); opacity: 1;
+  transform: scaleY(0); transform-origin: 50% 100%; transition: transform 550ms var(--cqa-expo);
+}
+.cqa-root[data-theme="dark"] .cqa-kpi::before { background: #0E4428; }
+.cqa-root .cqa-kpi:hover { background: transparent; color: #fff; }
+.cqa-root .cqa-kpi + .cqa-kpi:hover { box-shadow: -1px 0 0 var(--cqa-line); }
+.cqa-root .cqa-kpi:hover::before { transform: scaleY(1); }
+.cqa-root .cqa-kpi:hover :is(.cqa-kpi__val, .cqa-kpi__val *, .cqa-eyebrow, .cqa-kpi__sub) { color: #fff !important; }
+.cqa-root .cqa-kpi :is(.cqa-kpi__val, .cqa-eyebrow, .cqa-kpi__sub) { transition: color 300ms var(--cqa-ease), transform 550ms var(--cqa-expo); }
+.cqa-root .cqa-kpi:hover .cqa-kpi__val { transform: translateY(-6px); }
+.cqa-root .cqa-kpi--vault { background: transparent; color: inherit; }
+.cqa-root .cqa-kpi--vault::before { transform: scaleY(1); }
+.cqa-root .cqa-kpi--vault :is(.cqa-kpi__val, .cqa-eyebrow, .cqa-kpi__sub) { color: #fff; }
+
+.cqa-root .cqa-hero__cell { isolation: isolate; overflow: hidden; transition: color 300ms var(--cqa-ease); }
+.cqa-root .cqa-hero__cell::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; background: var(--cqa-mist);
+  transform: scaleY(0); transform-origin: 50% 100%; transition: transform 550ms var(--cqa-expo);
+}
+.cqa-root .cqa-hero__cell:hover::after { transform: scaleY(1); }
+.cqa-root .cqa-hero__val { transition: transform 550ms var(--cqa-expo); }
+.cqa-root .cqa-hero__cell:hover .cqa-hero__val { transform: translateY(-6px); }
+
+/* ── Rows that lift off the page as a sheet ── */
+.cqa-root :is(.cqa-crit, .cqa-item, .cqa-queue__item, .cqa-sec) {
+  background: transparent; border: 0; border-bottom: 1px solid var(--cqa-line); border-radius: 0; isolation: isolate;
+  transition: transform 450ms var(--cqa-expo), border-color 300ms var(--cqa-ease);
+}
+.cqa-root :is(.cqa-crit, .cqa-item, .cqa-queue__item, .cqa-sec)::before {
+  content: ""; position: absolute; inset: -4px -14px; z-index: -1; border-radius: 12px; pointer-events: none;
+  background: var(--cqa-surface); border: 1px solid var(--cqa-line);
+  box-shadow: 0 1px 2px rgba(4, 16, 10, .08), 0 8px 16px -6px rgba(4, 16, 10, .14), 0 32px 64px -24px rgba(4, 16, 10, .38);
+  opacity: 0; transform: scale(.96); transition: opacity 300ms var(--cqa-ease), transform 450ms var(--cqa-expo);
+}
+.cqa-root[data-theme="dark"] :is(.cqa-crit, .cqa-item, .cqa-queue__item, .cqa-sec)::before {
+  background: #10241A; border-color: rgba(220, 255, 230, .1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 20px -8px rgba(0, 0, 0, .55), 0 40px 70px -28px rgba(0, 0, 0, .85);
+}
+.cqa-root :is(.cqa-crit, .cqa-item, .cqa-queue__item, .cqa-sec):is(:hover, :focus-within, .is-focused, .is-active, [aria-current="true"]) {
+  transform: translateY(-4px); background: transparent; border-bottom-color: transparent; box-shadow: none;
+}
+.cqa-root :is(.cqa-crit, .cqa-item, .cqa-queue__item, .cqa-sec):is(:hover, :focus-within, .is-focused, .is-active, [aria-current="true"])::before { opacity: 1; transform: none; }
+.cqa-root .cqa-ledger, .cqa-root .cqa-secgroup { gap: 4px; }
+
+/* ── Table rows: content slides, a green tick marks the row ── */
+.cqa-root .cqa-table tbody tr { transition: background-color 250ms var(--cqa-ease); }
+.cqa-root .cqa-table tbody td { transition: transform 450ms var(--cqa-expo); }
+.cqa-root .cqa-table tbody tr:hover { background: var(--cqa-mist); }
+.cqa-root .cqa-table tbody tr:hover td { transform: translateX(8px); }
+.cqa-root .cqa-table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--cqa-green); }
+
+/* ── Buttons: lift with a real shadow ── */
+.cqa-root .cqa-btn { transition: transform 350ms var(--cqa-expo), box-shadow 350ms var(--cqa-ease), background-color 200ms, color 200ms, border-color 200ms; }
+.cqa-root .cqa-btn:hover:not(:disabled) { transform: translateY(-2px); }
+.cqa-root .cqa-btn--primary:hover:not(:disabled) { box-shadow: 0 2px 4px rgba(4, 16, 10, .2), 0 14px 28px -10px rgba(15, 84, 49, .75); }
+.cqa-root :is(.cqa-btn--secondary, .cqa-btn--line):hover:not(:disabled) { box-shadow: 0 2px 4px rgba(4, 16, 10, .1), 0 12px 24px -12px rgba(4, 16, 10, .45); }
+.cqa-root .cqa-btn:active:not(:disabled) { transform: translateY(0) scale(.97); box-shadow: none; transition-duration: 100ms; }
+
+/* ── Vault: tilts toward the cursor (fx.js sets --rx/--ry) ── */
+.cqa-root .cqa-vault {
+  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 600ms var(--cqa-expo), box-shadow 400ms var(--cqa-ease);
+}
+.cqa-root .cqa-vault:hover { box-shadow: 0 2px 6px rgba(0, 0, 0, .25), 0 40px 80px -30px rgba(0, 0, 0, .7); }
+
+/* Page art + display headline follow the pointer a little (individual `translate`, composes with scroll animations) */
+.cqa-root .cqa-page__art { translate: var(--px, 0) var(--py, 0); transition: translate 900ms var(--cqa-expo); }
+.cqa-root .cqa-page__title .cqa-display { translate: calc(var(--px, 0px) * -.25) calc(var(--py, 0px) * -.25); transition: translate 900ms var(--cqa-expo); }
+
+/* ═══ Scroll-driven motion (Chrome/Edge 115+; elsewhere fx.js falls back to IO reveal) ═══ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* sections: rise, un-tilt and sharpen as they come in; recede as they leave */
+    .cqa-root :is(.cqa-page > :not(.cqa-page__head):not(.cqa-hero), .cqa-dash__grid > *, .cqa-panel-grid > *) {
+      animation: cqa-v-in linear both, cqa-v-out linear both;
+      animation-timeline: view(), view();
+      animation-range: entry 0% cover 32%, exit 10% exit 100%;
+      transform-origin: 50% 0%;
+    }
+    @keyframes cqa-v-in { from { opacity: 0; transform: perspective(1200px) translateY(110px) rotateX(14deg) scale(.92); } }
+    @keyframes cqa-v-out { to { opacity: .2; transform: translateY(-40px) scale(.95); } }
+
+    /* the ruled edge draws itself as the section arrives */
+    .cqa-root .cqa-card:not(.cqa-modal .cqa-card):not(.cqa-preview)::before {
+      animation: cqa-rule-draw linear both; animation-timeline: view(); animation-range: entry 10% cover 40%;
+    }
+    @keyframes cqa-rule-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    /* rows: slide in from alternating sides */
+    .cqa-root :is(.cqa-table tbody tr, .cqa-ledger > *, .cqa-queue__item, .cqa-secgroup .cqa-item, .cqa-naRate li) {
+      animation: cqa-row-in linear both; animation-timeline: view(); animation-range: entry 0% entry 100%;
+    }
+    .cqa-root :is(.cqa-table tbody tr, .cqa-ledger > *, .cqa-queue__item, .cqa-secgroup .cqa-item):nth-child(even) { animation-name: cqa-row-in-r; }
+    @keyframes cqa-row-in { from { opacity: 0; transform: translateX(-70px) scale(.97); } }
+    @keyframes cqa-row-in-r { from { opacity: 0; transform: translateX(70px) scale(.97); } }
+
+    /* heat cells pop in */
+    .cqa-root .cqa-heat__cell { animation: cqa-cell-in linear both; animation-timeline: view(); animation-range: entry 0% cover 25%; }
+    @keyframes cqa-cell-in { from { opacity: 0; transform: scale(.4) rotate(-6deg); } }
+
+    /* chart bars grow from the baseline */
+    .cqa-root .cqa-chart :is(.cqa-chart__bar, .cqa-chart__bar--hi) { transform-box: fill-box; transform-origin: 50% 100%; }
+
+    /* the backdrop quietens as you read */
+    .cqa-root .cqa-bg svg { animation: cqa-bg-quiet linear both; animation-timeline: scroll(root); animation-range: 0 700px; }
+    @keyframes cqa-bg-quiet { to { opacity: .35; } }
+  }
+}
+
+/* ── Off switches ── */
+.cqa-root.cqa-motion-paused :is(.cqa-page > *, .cqa-dash__grid > *, .cqa-panel-grid > *, .cqa-table tbody tr, .cqa-ledger > *, .cqa-queue__item, .cqa-item, .cqa-heat__cell, .cqa-bg svg),
+.cqa-root.cqa-motion-paused .cqa-card::before { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .cqa-root :is(.cqa-crit, .cqa-item, .cqa-queue__item, .cqa-sec, .cqa-table tbody td, .cqa-btn, .cqa-kpi__val, .cqa-hero__val):hover,
+  .cqa-root .cqa-table tbody tr:hover td { transform: none; }
+  .cqa-root .cqa-vault { transform: none; }
+  .cqa-root :is(.cqa-page__art, .cqa-page__title .cqa-display) { translate: none; }
+}

@@ -1,13 +1,22 @@
-# secrets
+# ── Secrets: API links with sig= and model keys live only in .env ──
 .env
+.env.*
+!.env.example
 backend/.env
-# python
+
+# ── Organizers' data (audio_url contains sig=) — re-downloaded via the API ──
+data/
+data/*.db
+data/*.db-*
+data/raw/
+
+# ── Python ──
 __pycache__/
 *.pyc
 .venv/
 backend/.venv/
 .pytest_cache/
-# local data (содержит audio_url с sig организаторов)
-data/*.db
-data/*.db-*
-data/raw/
+
+# ── Node / OS ──
+node_modules/
+.DS_Store

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 320" role="img" aria-label="Freedom Broker">
+  <title>Freedom Broker</title>
+  <!-- Redrawn from assets/freedom-broker-logo.jpg. Shield: fill + outline; "F" is negative space. -->
+  <rect width="960" height="320" fill="#05532F"/>
+  <defs>
+    <mask id="f" maskUnits="userSpaceOnUse" x="-10" y="-10" width="270" height="310">
+      <rect x="-10" y="-10" width="270" height="310" fill="#fff"/>
+      <path d="M84 70H196C220 70 236 58 244 40V96C234 102 222 106 206 106H124V134H190V166H124V290H84Z" fill="#000"/>
+    </mask>
+  </defs>
+  <g transform="translate(60 18)">
+    <path d="M6 6H244V92C244 178 196 242 125 279C54 242 6 178 6 92Z" fill="#fff" mask="url(#f)"/>
+    <path d="M6 6H244V92C244 178 196 242 125 279C54 242 6 178 6 92Z" fill="none" stroke="#fff" stroke-width="6" stroke-linejoin="round"/>
+  </g>
+  <g fill="#fff" font-family="Montserrat, 'Arial Black', Arial, sans-serif" font-weight="800">
+    <text x="360" y="150" font-size="112" letter-spacing="2">FREEDOM</text>
+    <text x="360" y="252" font-size="90" letter-spacing="2">BROKER</text>
+  </g>
+</svg>

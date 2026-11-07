@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#040C08">
+<title>Freedom Broker · CQA</title>
+<meta name="description" content="Conversation Quality Analytics — AI-оценка диалогов операторов по чек-листу">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230F5431'/%3E%3Cpath d='M10 24V9h12M10 16h9' stroke='white' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<!-- Fonts are optional: the UI falls back to system stacks offline and inside D365. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Onest (UI, variable) and Montserrat (wordmark) cover cyrillic-ext (Kazakh: ә ғ қ ң ө ұ ү һ і). -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@100..900&family=Golos+Text:wght@400..900&family=Geologica:wght@100..900&family=Martian+Mono:wdth,wght@75..112.5,300..600&family=Montserrat:wght@800&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/animations.css">
+<link rel="stylesheet" href="css/luxe.css">
+<link rel="stylesheet" href="css/type.css">
+<link rel="stylesheet" href="css/masthead.css">
+<link rel="stylesheet" href="css/polish.css">
+<link rel="stylesheet" href="css/motion.css">
+<link rel="stylesheet" href="css/guidelines.css">
+<link rel="stylesheet" href="css/backdrop.css">
+<link rel="stylesheet" href="css/scroll.css">
+<link rel="stylesheet" href="css/ledger.css">
+<link rel="stylesheet" href="css/canvas.css">
+<link rel="stylesheet" href="css/cinema.css">
+<link rel="stylesheet" href="css/atmos.css">
+<link rel="stylesheet" href="css/transitions.css">
+<link rel="stylesheet" href="css/splash.css">
+<link rel="stylesheet" href="css/print.css">
+<style>html, body { margin: 0; height: 100%; } body { background: #040C08; }
+  /* Brand green from the very first paint when the intro will play (no paper → green flash while modules load). */
+  html.cqa-preintro body { background: #05532F; } html.cqa-preintro #cqa-app { visibility: hidden; }</style>
+<script>
+  (function () {
+    try {
+      var p = new URLSearchParams(location.search).get('intro');
+      var seen = sessionStorage.getItem('cqa.intro.seen') === '1';
+      if (p === '1' || (p !== '0' && !seen)) {
+        document.documentElement.classList.add('cqa-preintro');
+        setTimeout(function () { document.documentElement.classList.remove('cqa-preintro'); }, 4000);
+      }
+    } catch (e) { /* storage blocked: the splash decides on its own */ }
+  })();
+</script>
+</head>
+<body>
+<div class="cqa-root" id="cqa-app" data-theme="dark">
+  <noscript><p style="padding:32px">Для работы CQA нужен JavaScript.</p></noscript>
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

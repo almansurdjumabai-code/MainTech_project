@@ -1,0 +1,81 @@
+/* ═══════════════ SCROLL — reveal on scroll, headline entrance, scroll-linked masthead ═══════════════
+   Transform / opacity / filter / clip-path only. Everything is off under reduced motion or the pause toggle. */
+
+/* ── Reveal on scroll (tags set by fx.js → scanReveal) ── */
+.cqa-root [data-reveal] { opacity: 0; transform: translateY(36px) scale(.975); }
+.cqa-root [data-reveal="soft"] { transform: translateY(16px); filter: none; }
+.cqa-root [data-reveal="head"] { opacity: 1; filter: none; transform: translateY(.45em); clip-path: inset(0 0 100% 0); }
+
+.cqa-root [data-reveal].is-in { animation: cqa-reveal 950ms var(--cqa-expo) var(--rd, 0ms) both; }
+.cqa-root [data-reveal="soft"].is-in { animation: cqa-reveal-soft 700ms var(--cqa-expo) var(--rd, 0ms) both; }
+.cqa-root [data-reveal="head"].is-in { animation: cqa-reveal-head 900ms var(--cqa-expo) var(--rd, 0ms) both; }
+
+@keyframes cqa-reveal {
+  from { opacity: 0; transform: translateY(36px) scale(.975); }
+
+  to { opacity: 1; transform: none; }
+}
+@keyframes cqa-reveal-soft { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes cqa-reveal-head {
+  from { transform: translateY(.45em); clip-path: inset(0 0 100% 0); }
+  to { transform: none; clip-path: inset(-20% -4% -30% -4%); }
+}
+
+/* ── Big headline: letters rise out of a mask with a soft focus pull, the dot lands last ── */
+.cqa-root .cqa-split .cqa-ch {
+  opacity: 0; transform: translateY(112%) rotate(7deg); transform-origin: 0 100%;
+  animation: cqa-ch-rise 1150ms var(--cqa-expo) both; animation-delay: calc(var(--i) * 34ms + 90ms);
+}
+@keyframes cqa-ch-rise {
+  0% { opacity: 0; transform: translateY(112%) rotate(7deg); }
+  35% { opacity: 1; }
+
+  100% { opacity: 1; transform: none; }
+}
+.cqa-root .cqa-split::after { animation: cqa-dot-land 800ms var(--cqa-spring) both; animation-delay: calc(var(--n, 8) * 34ms + 520ms); transform-origin: 50% 100%; }
+@keyframes cqa-dot-land {
+  0% { opacity: 0; transform: translateY(-1.1em) scale(.4); }
+  55% { opacity: 1; transform: translateY(0) scale(1.25, .8); }
+  75% { transform: scale(.92, 1.08); }
+  100% { opacity: 1; transform: none; }
+}
+.cqa-root .cqa-page__title .cqa-lead { animation: cqa-lead-in 1000ms var(--cqa-expo) 520ms both; }
+@keyframes cqa-lead-in {
+  from { opacity: 0; transform: translateY(14px); clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; transform: none; clip-path: inset(-10% -2% -20% -2%); }
+}
+
+/* ── Scroll-linked: the masthead recedes as you scroll, a thin progress line tracks the page ── */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .cqa-root .cqa-page__title .cqa-display {
+      transform-origin: 0 100%;
+      animation: cqa-head-recede linear both; animation-timeline: scroll(root); animation-range: 0 460px;
+    }
+    @keyframes cqa-head-recede { to { transform: translateY(70px) scale(.9); opacity: .12; } }
+
+    .cqa-root .cqa-page__art {
+      animation: cqa-art-in 1300ms var(--cqa-expo) 260ms both, cqa-art-drift linear both;
+      animation-timeline: auto, scroll(root); animation-range: normal, 0 520px;
+    }
+    @keyframes cqa-art-drift { to { transform: translateY(-50px) rotate(-5deg) scale(.94); opacity: .25; } }
+
+    .cqa-root::after {
+      content: ""; position: fixed; left: 0; right: 0; top: 0; height: 2px; z-index: 250; pointer-events: none;
+      background: linear-gradient(90deg, var(--cqa-green-deep), var(--cqa-green) 60%, var(--cqa-lime));
+      transform-origin: 0 50%; transform: scaleX(0);
+      animation: cqa-progress linear both; animation-timeline: scroll(root);
+    }
+    @keyframes cqa-progress { to { transform: scaleX(1); } }
+  }
+}
+
+/* ── Off switches ── */
+.cqa-root.cqa-motion-paused [data-reveal],
+.cqa-root.cqa-motion-paused .cqa-page__title .cqa-display { opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; animation: none !important; }
+.cqa-root.cqa-motion-paused::after { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .cqa-root [data-reveal] { opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; animation: none !important; }
+  .cqa-root .cqa-split .cqa-ch, .cqa-root .cqa-split::after, .cqa-root .cqa-page__title .cqa-lead { opacity: 1; transform: none; filter: none; clip-path: none; animation: none; }
+}
+@media print { .cqa-root [data-reveal] { opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; } }
