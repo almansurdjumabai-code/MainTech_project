@@ -61,3 +61,17 @@ def test_save_then_compare_and_eval_format(client):
 def test_labeler_page_served(client):
     r = client.get("/labeler/")
     assert r.status_code == 200 and "CQA" in r.text and 'const API = ""' in r.text
+
+
+def test_second_labeler_is_blind_and_separate(client):
+    # второй разметчик не видит систему, пока сам не разметит
+    assert client.get(f"/labeling/compare/{CID}", params={"labeler": "qa2"}).status_code == 409
+    r = client.put(f"/labeling/labels/{CID}", json={"labels": {**GOOD, "C6": 7}, "labeler": "qa2"})
+    assert r.json()["role"] == "second"
+    gold = json.loads(Path(labeling.gold_path()).read_text(encoding="utf-8"))
+    assert gold["labels"][CID]["C6"] == 10 and gold["second"][CID]["labels"]["C6"] == 7  # основная не перезаписана
+    assert client.get(f"/labeling/compare/{CID}", params={"labeler": "qa2"}).json()["second"]["labeler"] == "qa2"
+    from eval.run_eval import human_agreement, kappa
+    agr = human_agreement(gold)
+    assert agr["criteria"]["C6"]["agreement"] == 0 and agr["criteria"]["C1"]["agreement"] == 1
+    assert kappa([("YES", "YES"), ("NO", "NO")]) == 1.0 and kappa([("YES", "NO"), ("NO", "YES")]) == -1.0

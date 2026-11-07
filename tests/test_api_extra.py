@@ -179,3 +179,10 @@ def test_checklist_id_cannot_escape_checklist_dir(client):
         assert "/" not in r.json()["id"] and ".." not in r.json()["id"]
     root = Path(service.config.CHECKLIST_DIR).resolve()
     assert not list(root.parent.parent.glob("evil-v*.json")) and not list(root.parent.glob("evil-v*.json"))
+
+
+def test_preflight_runs_offline(client, capsys):
+    from ml import preflight
+    rc = preflight.main(["--group-id", "TEST"])
+    out = capsys.readouterr().out
+    assert rc == 0 and "TEST: 5 диалогов" in out and "PREFLIGHT: OK" in out

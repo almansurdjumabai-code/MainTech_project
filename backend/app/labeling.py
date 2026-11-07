@@ -68,7 +68,8 @@ def split():
         items.append({"conversation_id": cid, "ingested": bool(conv),
                       "language": conv and conv.get("language"), "channel": conv and conv.get("channel"),
                       "turns": conv and conv.get("turns"), "labeled": cid in gold["labels"],
-                      "labeler": gold["meta"].get(cid, {}).get("labeler")})
+                      "labeler": gold["meta"].get(cid, {}).get("labeler"),
+                      "second_labeler": gold.get("second", {}).get(cid, {}).get("labeler")})
     return {**{k: v for k, v in s.items() if k != "conversation_ids"}, "items": items,
             "labeled": sum(i["labeled"] for i in items), "total": len(items)}
 
@@ -97,19 +98,30 @@ def put_label(conversation_id: str, payload: LabelIn):
             raise HTTPException(422, str(exc)) from exc
     with _lock:
         gold = _load_gold()
-        gold["labels"][conversation_id] = clean
-        gold["meta"][conversation_id] = {"labeler": payload.labeler, "notes": payload.notes, "labeled_at": db.now()}
+        first = gold["meta"].get(conversation_id, {}).get("labeler")
+        entry = {"labeler": payload.labeler, "notes": payload.notes, "labeled_at": db.now()}
+        if first and first != payload.labeler:
+            # второй разметчик: отдельно, для согласия человек–человек (основная разметка не перезаписывается)
+            gold.setdefault("second", {})[conversation_id] = {"labels": clean, **entry}
+            role = "second"
+        else:
+            gold["labels"][conversation_id] = clean
+            gold["meta"][conversation_id] = entry
+            role = "primary"
         _save_gold(gold)
-    return {"conversation_id": conversation_id, "labels": clean}
+    return {"conversation_id": conversation_id, "labels": clean, "role": role}
 
 
 @router.get("/compare/{conversation_id}")
-def compare(conversation_id: str):
+def compare(conversation_id: str, labeler: Optional[str] = None):
     """Разметка человека vs автооценка. Для диалогов сплита — только после разметки (слепота)."""
     s = _split()
     gold = _load_gold()
     human = gold["labels"].get(conversation_id)
-    if conversation_id in s["conversation_ids"] and human is None:
+    labelers = {gold["meta"].get(conversation_id, {}).get("labeler"), gold.get("second", {}).get(conversation_id, {}).get("labeler")} - {None}
+    # слепота: ответы системы видит только тот, кто уже разметил этот диалог
+    hidden = human is None or (labeler is not None and labeler not in labelers)
+    if conversation_id in s["conversation_ids"] and hidden:
         raise HTTPException(409, "сначала сохраните разметку: ответы системы скрыты до этого")
     results = db.get_results_for_conversation(conversation_id, s["checklist_id"])
     res = results[0] if results else None
@@ -122,6 +134,8 @@ def compare(conversation_id: str):
                      "explanation": c["explanation"], "evidence": c.get("evidence"), "expected_span": c.get("expected_span"),
                      "confidence": c.get("confidence"), "needs_review": c.get("needs_review"),
                      "review_reasons": c.get("review_reasons")})
+    second = gold.get("second", {}).get(conversation_id)
     return {"conversation_id": conversation_id, "human": human, "meta": gold["meta"].get(conversation_id),
+            "second": second,
             "has_result": bool(res), "overall": res and res["overall"], "critical_error": res and res["critical_error"],
             "sections": res and res["sections"], "judge": res and res["pipeline"]["judge"], "rows": rows}

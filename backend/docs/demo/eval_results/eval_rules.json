@@ -788,6 +788,7 @@
         "C1": {
           "n": 10,
           "accuracy": 1.0,
+          "kappa": 1.0,
           "per_class": {
             "NO": {
               "precision": 1.0,
@@ -815,6 +816,7 @@
         "C2": {
           "n": 10,
           "accuracy": 0.9,
+          "kappa": 0.8245614035087719,
           "per_class": {
             "NA": {
               "precision": 1.0,
@@ -852,6 +854,7 @@
         "C3": {
           "n": 10,
           "accuracy": 1.0,
+          "kappa": 1.0,
           "per_class": {
             "NA": {
               "precision": 1.0,
@@ -879,6 +882,7 @@
         "C4": {
           "n": 9,
           "accuracy": 0.8888888888888888,
+          "kappa": 0.7428571428571428,
           "per_class": {
             "10": {
               "precision": 1.0,
@@ -914,6 +918,7 @@
         "C5": {
           "n": 8,
           "accuracy": 1.0,
+          "kappa": 1.0,
           "per_class": {
             "NO": {
               "precision": 1.0,
@@ -941,6 +946,7 @@
         "C6": {
           "n": 8,
           "accuracy": 1.0,
+          "kappa": 1.0,
           "per_class": {
             "10": {
               "precision": 1.0,
@@ -977,6 +983,7 @@
         "C7": {
           "n": 6,
           "accuracy": 1.0,
+          "kappa": 1.0,
           "per_class": {
             "NO": {
               "precision": 1.0,
@@ -1004,6 +1011,7 @@
         "C8": {
           "n": 8,
           "accuracy": 1.0,
+          "kappa": 1.0,
           "per_class": {
             "NO": {
               "precision": 1.0,

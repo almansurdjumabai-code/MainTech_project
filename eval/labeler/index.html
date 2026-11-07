@@ -108,13 +108,17 @@ async function init() {
 }
 
 function inSplit(cid) { return state.split.items.some((i) => i.conversation_id === cid); }
+function me() { return $("labeler").value.trim(); }
 function isLabeled(cid) { return state.split.items.some((i) => i.conversation_id === cid && i.labeled); }
+function labeledByMe(cid) {
+  return state.split.items.some((i) => i.conversation_id === cid && me() && (i.labeler === me() || i.second_labeler === me()));
+}
 
 function renderList() {
   const s = state.split;
   $("progress").textContent = `размечено ${s.labeled} из ${s.total}`;
   const items = $("mode").value === "split"
-    ? s.items.map((i) => ({id: i.conversation_id, lang: i.language, ch: i.channel, done: i.labeled}))
+    ? s.items.map((i) => ({id: i.conversation_id, lang: i.language, ch: i.channel, done: me() ? labeledByMe(i.conversation_id) : i.labeled}))
     : state.all.map((c) => ({id: c.conversation_id, lang: c.language, ch: c.channel, done: isLabeled(c.conversation_id), split: inSplit(c.conversation_id)}));
   $("list").innerHTML = items.map((i) => `
     <a href="#" data-id="${esc(i.id)}" class="${state.current === i.id ? "active" : ""}">
@@ -129,7 +133,8 @@ async function open(cid) {
   renderList();
   state.conv = await api(`/conversations/${encodeURIComponent(cid)}`);
   renderTranscript();
-  if (inSplit(cid) && !isLabeled(cid)) renderForm();
+  // форма, если диалог из сплита ещё не размечен вами (второй разметчик тоже работает вслепую)
+  if (inSplit(cid) && (!isLabeled(cid) || (me() && !labeledByMe(cid)))) renderForm();
   else renderCompare();
 }
 
@@ -218,7 +223,8 @@ async function save(e) {
 
 async function renderCompare() {
   let d;
-  try { d = await api(`/labeling/compare/${encodeURIComponent(state.current)}`); }
+  const who = me() ? `?labeler=${encodeURIComponent(me())}` : "";
+  try { d = await api(`/labeling/compare/${encodeURIComponent(state.current)}${who}`); }
   catch (err) { $("side").innerHTML = `<p class="err">${esc(err.message)}</p>`; return; }
   if (!d.has_result) {
     $("side").innerHTML = `<p>Автооценки ещё нет. Запустите <code>POST /evaluate</code> для ${esc(d.conversation_id)}.</p>`;

@@ -59,6 +59,34 @@ def prf(pairs: list[tuple[str, str]]) -> dict:
             "confusion": {g: dict(c) for g, c in conf.items()}}
 
 
+def kappa(pairs: list[tuple[str, str]]) -> float | None:
+    """Cohen's kappa: согласие с поправкой на случайное совпадение (1 — полное, 0 — как случайно)."""
+    n = len(pairs)
+    if n < 2:
+        return None
+    po = sum(a == b for a, b in pairs) / n
+    labels = {a for a, _ in pairs} | {b for _, b in pairs}
+    pe = sum((sum(a == l for a, _ in pairs) / n) * (sum(b == l for _, b in pairs) / n) for l in labels)
+    return None if pe == 1 else (po - pe) / (1 - pe)
+
+
+def human_agreement(gold: dict) -> dict | None:
+    """Согласие двух разметчиков (если есть gold['second']): без него сравнение модели с человеком неполное."""
+    second = gold.get("second") or {}
+    by_crit = defaultdict(list)
+    for cid, s in second.items():
+        first = gold["labels"].get(cid) or {}
+        for crit, b in (s.get("labels") or {}).items():
+            a = first.get(crit)
+            if a is not None and b is not None:
+                by_crit[crit].append((str(a), str(b)))
+    if not by_crit:
+        return None
+    return {"conversations": len(second),
+            "criteria": {c: {"n": len(p), "agreement": sum(a == b for a, b in p) / len(p), "kappa": kappa(p)}
+                         for c, p in sorted(by_crit.items())}}
+
+
 def run_mode(mode: str, gold: dict, checklist: dict) -> dict | None:
     judge = make_mode_judge(mode)
     if judge is None:
@@ -100,6 +128,7 @@ def metrics(rows: list[dict], checklist: dict) -> dict:
     out = {"n": len(rows), "accuracy": sum(r["ok"] for r in rows) / len(rows) if rows else None, "criteria": {}}
     for cid, rs in sorted(by_crit.items()):
         out["criteria"][cid] = {"n": len(rs), "accuracy": sum(r["ok"] for r in rs) / len(rs),
+                                "kappa": kappa([(r["gold"], r["pred"]) for r in rs]),
                                 **prf([(r["gold"], r["pred"]) for r in rs])}
     f1s = [m["macro_f1"] for m in out["criteria"].values() if m["macro_f1"] is not None]
     out["macro_f1_mean"] = sum(f1s) / len(f1s) if f1s else None
@@ -139,12 +168,21 @@ def pct(x) -> str:
     return "—" if x is None else f"{x:.0%}"
 
 
+def num(x) -> str:
+    return "—" if x is None else f"{x:.2f}"
+
+
 def to_markdown(gold: dict, results: list[dict]) -> str:
     lines = [f"# Evaluation — {gold.get('group_id')} / {gold.get('checklist_id')}", "",
              f"Разметка: `{Path(gold['_path']).name}`, {len(gold['labels'])} диалогов. "
              f"Кто размечал: {gold.get('labeled_by')}.", "",
              "> Внимание: правила rule-based режима дорабатывались на этих же диалогах, поэтому для `rules` это "
              "оценка на обучающих данных, а не независимый тест.", "",
+             "«Не уверен» / спорные ответы разметки (null) исключены; метрики по критериям не смешиваются в одну.", "",
+             *(["Согласие двух людей (база для сравнения с моделью): " + ", ".join(
+                 f"{c} {v['agreement']:.0%} (κ={'—' if v['kappa'] is None else round(v['kappa'], 2)}, n={v['n']})"
+                 for c, v in gold["_human_agreement"]["criteria"].items()), ""] if gold.get("_human_agreement") else
+               ["Согласие человек–человек не измерено: нет второго разметчика.", ""]),
              "| Режим | Модель | Accuracy | Macro-F1 (ср.) | False PASS (грубые) | На проверку | Точность авто | Ошибок поймано review | $/диалог | Латентность, с |",
              "|---|---|---|---|---|---|---|---|---|---|"]
     for r in results:
@@ -157,10 +195,10 @@ def to_markdown(gold: dict, results: list[dict]) -> str:
                      f"{rv['errors_sent_to_review']} из {rv['errors_total']} | {r['cost_per_conversation']:.4f} | {r['latency_sec_avg']} |")
     for r in results:
         m = r["metrics"]
-        lines += ["", f"## {r['mode']}", "", "| Критерий | n | Accuracy | Macro-F1 | Матрица (gold → pred) |", "|---|---|---|---|---|"]
+        lines += ["", f"## {r['mode']}", "", "| Критерий | n | Accuracy | Cohen's κ | Macro-F1 | Матрица (gold → pred) |", "|---|---|---|---|---|---|"]
         for cid, cm in m["criteria"].items():
             conf = "; ".join(f"{g}→{', '.join(f'{p}:{n}' for p, n in sorted(ps.items()))}" for g, ps in sorted(cm["confusion"].items()))
-            lines.append(f"| {cid} | {cm['n']} | {pct(cm['accuracy'])} | "
+            lines.append(f"| {cid} | {cm['n']} | {pct(cm['accuracy'])} | {num(cm['kappa'])} | "
                          f"{'—' if cm['macro_f1'] is None else f'{cm['macro_f1']:.2f}'} | {conf} |")
         lines += ["", "По языкам: " + ", ".join(f"{k} {pct(v['accuracy'])} (n={v['n']})" for k, v in m["accuracy_by_language"].items()),
                   f"N/A: precision {pct(m['na']['precision'])}, recall {pct(m['na']['recall'])}. "
@@ -195,6 +233,9 @@ def main(argv=None) -> int:
     gold = json.loads(Path(a.gold).read_text(encoding="utf-8"))
     gold["_path"] = a.gold
     checklist = service.get_checklist_or_404(gold["checklist_id"])
+    gold["_human_agreement"] = human_agreement(gold)
+    if gold["_human_agreement"]:
+        print("human-human:", {c: round(v["agreement"], 2) for c, v in gold["_human_agreement"]["criteria"].items()})
 
     results = []
     for mode in modes:
