@@ -59,9 +59,10 @@ class OpenAICompatJudge(ClaudeJudge):
     def __init__(self, model: str | None = None, base_url: str | None = None, api_key: str | None = None,
                  transport: httpx.BaseTransport | None = None):
         self.model = model or config.OPENAI_COMPAT_MODEL
-        self.fallback_model = config.OPENAI_COMPAT_FALLBACK_MODEL if model is None else ""
-        if self.fallback_model and time.monotonic() - _quota_exhausted.get(self.model, -1e9) < QUOTA_PAUSE_SEC:
-            self.model = self.fallback_model
+        # цепочка запасных моделей через запятую: берётся первая, у которой не кончилась дневная квота
+        self.primary_model = self.model
+        self.fallback_models = [m.strip() for m in config.OPENAI_COMPAT_FALLBACK_MODEL.split(",") if m.strip()] if model is None else []
+        self.model = self._next_model() or self.model
         self.base_url = (base_url or config.OPENAI_COMPAT_BASE_URL).rstrip("/")
         self.api_key = api_key if api_key is not None else config.OPENAI_COMPAT_API_KEY
         self.json_mode = config.OPENAI_COMPAT_JSON_MODE  # json_schema | json_object
@@ -69,6 +70,18 @@ class OpenAICompatJudge(ClaudeJudge):
         self.system = (config.PROMPTS_DIR / "judge_system.md").read_text(encoding="utf-8")
         self.fallback = RuleJudge()
         self.anthropic = None
+
+    def _next_model(self) -> str | None:
+        now = time.monotonic()
+        for m in [self.primary_model, *self.fallback_models]:
+            if now - _quota_exhausted.get(m, -1e9) >= QUOTA_PAUSE_SEC:
+                return m
+        return None
+
+    @property
+    def fallback_model(self) -> str:
+        """Непусто, если сейчас работает запасная модель (на ней одно прочтение вместо голосования)."""
+        return self.model if self.model != self.primary_model else ""
 
     @property
     def prices(self) -> tuple[float, float, float]:
@@ -124,9 +137,10 @@ class OpenAICompatJudge(ClaudeJudge):
                 continue
             if _daily_quota_hit(resp):
                 _quota_exhausted[self.model] = time.monotonic()
-                if self.fallback_model and self.model != self.fallback_model:
-                    log.warning("daily quota exhausted for %s, switching to %s", self.model, self.fallback_model)
-                    self.model = self.fallback_model
+                nxt = self._next_model()
+                if nxt:
+                    log.warning("daily quota exhausted for %s, switching to %s", self.model, nxt)
+                    self.model = nxt
                     continue
                 raise RuntimeError(f"provider daily quota exhausted for {self.model}")  # сразу правила, без ожидания
             if resp.status_code == 429 or resp.status_code >= 500:

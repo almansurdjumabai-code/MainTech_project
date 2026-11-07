@@ -336,8 +336,7 @@ class ClaudeJudge:
         return out
 
     def _on_fallback_model(self) -> bool:
-        fb = getattr(self, "fallback_model", "")
-        return bool(fb) and self.model == fb
+        return bool(getattr(self, "fallback_model", ""))
 
     def judge_all(self, ctx: Ctx, crits: list[dict], hints: dict[str, dict], usage: Usage) -> dict[str, dict]:
         """Стратегия single_call: один запрос на все критерии, которых нет в кэше."""
