@@ -114,7 +114,7 @@ Rule-based сейчас совпадает с этой разметкой на 9
   // в каждом критерии: "rule_answer", "agreement": "agree|near|disagree|null", "confidence": "high|medium|low",
   //                     "needs_review": bool, "review_reasons": ["rules_llm_disagree", "llm_low_confidence", "llm_fallback",
   //                     "consistency_override", "no_evidence", "no_rule", "critical_flag"]
-  "pipeline": {"judge": "anthropic", "model": "claude-opus-5-5", "llm_calls": 8, "input_tokens": …, "output_tokens": …, "cost_usd": …, "consistency_notes": []}
+  "pipeline": {"judge": "anthropic", "model": "claude-sonnet-5-5", "llm_calls": 8, "input_tokens": …, "output_tokens": …, "cost_usd": …, "consistency_notes": []}
 }
 ```
 
@@ -145,7 +145,8 @@ Rule-based сейчас совпадает с этой разметкой на 9
 
 | Модель (`LLM_MODEL`) | Цена, $ / 1M токенов (вход / выход) | Одна полная оценка (8 вызовов) |
 |---|---|---|
-| `claude-opus-5-5` (по умолчанию) | 4 / 20 | ≈ $0.10 (средний DEV-диалог), до ≈ $0.25 для длинного звонка |
+| `claude-sonnet-5-5` (по умолчанию) | 2 / 10, чтение кэша 0.20 | ≈ $0.03–0.07 (оценка, см. docs/demo/cost-report.md) |
+| `claude-opus-5-5` | 4 / 20, чтение кэша 0.20 | ≈ $0.06–0.14 |
 | `claude-haiku-5-5` | 0.10 / 0.50 | ≈ $0.003 |
 | rule-based (`LLM_PROVIDER=rules`) | 0 | 0 |
 

@@ -153,7 +153,7 @@ def test_usage_is_thread_safe():
     assert u.calls == 8000 and u.input_tokens == 8000
 
 
-@pytest.mark.parametrize("model,beta", [("claude-opus-5-5", True), ("claude-haiku-5-5", False)])
+@pytest.mark.parametrize("model,beta", [("claude-sonnet-5-5", True), ("claude-opus-5-5", True), ("claude-haiku-5-5", False)])
 def test_opus_uses_server_side_fallback(monkeypatch, model, beta):
     j, fake = make_judge(monkeypatch, ANSWERS, model=model)
     ctx = build_ctx(CONV)

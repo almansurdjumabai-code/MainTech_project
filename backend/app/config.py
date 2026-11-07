@@ -16,11 +16,12 @@ PROMPTS_DIR = ROOT / "prompts"
 
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "auto").lower()  # auto | anthropic | rules
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
-LLM_MODEL = os.getenv("LLM_MODEL", "claude-opus-5-5")
+LLM_MODEL = os.getenv("LLM_MODEL", "claude-sonnet-5-5")
 LLM_EFFORT = os.getenv("LLM_EFFORT", "low")
-LLM_PRICE_IN = float(os.getenv("LLM_PRICE_IN", "4.0"))
-LLM_PRICE_OUT = float(os.getenv("LLM_PRICE_OUT", "20.0"))
-LLM_PRICE_CACHE_READ = float(os.getenv("LLM_PRICE_CACHE_READ", str(LLM_PRICE_IN * 0.05)))
+# цены $/1M по умолчанию — Sonnet 5.5: вход 2, выход 10, чтение кэша 0.20 (запись кэша = 1.25x входа)
+LLM_PRICE_IN = float(os.getenv("LLM_PRICE_IN", "2.0"))
+LLM_PRICE_OUT = float(os.getenv("LLM_PRICE_OUT", "10.0"))
+LLM_PRICE_CACHE_READ = float(os.getenv("LLM_PRICE_CACHE_READ", "0.20"))
 LLM_MAX_WORKERS = int(os.getenv("LLM_MAX_WORKERS", "8"))
 # per_criterion — отдельный вызов на критерий (независимые суждения); single_call — все критерии одним вызовом (дешевле)
 LLM_STRATEGY = os.getenv("LLM_STRATEGY", "per_criterion").lower()
