@@ -1,0 +1,60 @@
+{
+  "error": "",
+  "isSuccess": true,
+  "data": {
+    "dataset_group_id": "TEST",
+    "total_records": 4,
+    "records": [
+      {
+        "conversation_id": "t-ru-happy",
+        "channel": "agent chat",
+        "language": "RU",
+        "audio_url": null,
+        "transcript": [
+          {"timestamp": "00:00", "speaker": "client", "text": "Как скачать отчёт брокера за прошлый месяц?"},
+          {"timestamp": "00:02", "speaker": "bot", "text": "Здравствуйте! Я AIM, AI-ассистент Freedom Broker."},
+          {"timestamp": "00:10", "speaker": "system", "text": "Эскалация на оператора."},
+          {"timestamp": "00:40", "speaker": "operator", "text": "Здравствуйте! Меня зовут Алина. Откройте раздел «Отчёты и документы», выберите «Отчёт брокера» и укажите нужный период."},
+          {"timestamp": "01:05", "speaker": "client", "text": "Нашёл, спасибо!"},
+          {"timestamp": "01:20", "speaker": "operator", "text": "Рада помочь. Могу ли я ещё чем-то помочь? Хорошего дня!"}
+        ]
+      },
+      {
+        "conversation_id": "t-kz-na-id",
+        "channel": "agent chat",
+        "language": "KZ",
+        "audio_url": null,
+        "transcript": [
+          {"timestamp": "00:00", "speaker": "client", "text": "Тарифтер туралы қайдан білуге болады?"},
+          {"timestamp": "00:05", "speaker": "system", "text": "Чат операторға жіберілді."},
+          {"timestamp": "00:30", "speaker": "operator", "text": "Сәлеметсіз бе, мен Дана. Қосымшадағы «Тарифтер» бөлімін ашыңыз, барлық тарифтер сонда көрсетілген."},
+          {"timestamp": "00:50", "speaker": "client", "text": "Рақмет, таптым."},
+          {"timestamp": "01:00", "speaker": "operator", "text": "Тағы сұрағыңыз болса, жазыңыз. Сау болыңыз!"}
+        ]
+      },
+      {
+        "conversation_id": "t-en-critical",
+        "channel": "agent chat",
+        "language": "EN",
+        "audio_url": null,
+        "transcript": [
+          {"timestamp": "00:00", "speaker": "client", "text": "Which bonds should I buy for a safe portfolio?"},
+          {"timestamp": "00:20", "speaker": "operator", "text": "Hi, I'm Chris. Send me your personal number and I'll call you after work. I charge for private advice."},
+          {"timestamp": "00:40", "speaker": "client", "text": "Okay, thanks."}
+        ]
+      },
+      {
+        "conversation_id": "t-ru-missed",
+        "channel": "agent chat",
+        "language": "RU",
+        "audio_url": null,
+        "transcript": [
+          {"timestamp": "00:00", "speaker": "client", "text": "Деньги не пришли на счёт, уже второй день жду, это ужас."},
+          {"timestamp": "00:40", "speaker": "operator", "text": "Я посмотрел: на вашем счёте платёж ещё в обработке, он поступит завтра."},
+          {"timestamp": "01:00", "speaker": "client", "text": "Ладно."},
+          {"timestamp": "01:10", "speaker": "operator", "text": "Платёж поступит завтра до обеда по времени Алматы."}
+        ]
+      }
+    ]
+  }
+}
