@@ -2,13 +2,6 @@
    Loaded after type.css. Scoped under .cqa-root. */
 .cqa-root .cqa-page { position: relative; isolation: isolate; }
 .cqa-root .cqa-page__head { position: relative; }
-.cqa-root .cqa-page__index {
-  position: absolute; right: -6px; top: -64px; z-index: -1; pointer-events: none; user-select: none;
-  font-family: "Unbounded", var(--cqa-font-display); font-weight: 200; font-size: clamp(150px, 20vw, 320px);
-  line-height: .8; letter-spacing: -.08em; color: transparent; -webkit-text-stroke: 1px rgba(15, 84, 49, .18);
-  animation: cqa-index-in 1400ms var(--cqa-expo) 120ms both;
-}
-.cqa-root[data-theme="dark"] .cqa-page__index { -webkit-text-stroke-color: rgba(184, 242, 138, .14); }
 
 .cqa-root .cqa-hero {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: -6px 0 44px;
@@ -25,7 +18,7 @@
 .cqa-root .cqa-hero__label { font-size: 13px; font-weight: 600; letter-spacing: -.01em; color: var(--cqa-graphite); }
 .cqa-root .cqa-hero__val {
   display: flex; align-items: baseline; gap: .1em; color: var(--cqa-ink);
-  font-family: "Unbounded", var(--cqa-font-display); font-weight: 300; font-size: clamp(40px, 3.8vw, 60px); letter-spacing: -.06em; line-height: 1;
+  font-family: var(--cqa-font-num); font-weight: 300; font-size: clamp(40px, 3.8vw, 60px); letter-spacing: -.04em; line-height: 1;
 }
 .cqa-root .cqa-hero__val em { font-style: normal; font-size: .5em; color: var(--cqa-mute); letter-spacing: -.02em; }
 .cqa-root .cqa-hero__val small { margin-left: .45em; font-family: var(--cqa-font-sans); font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: var(--cqa-mute); }
@@ -71,12 +64,10 @@
 }
 .cqa-root .cqa-table tbody tr:hover .cqa-go { opacity: 1; transform: none; background: #04100A; color: var(--cqa-lime); }
 
-@keyframes cqa-index-in { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
 @keyframes cqa-draw-line { to { stroke-dashoffset: 0; } }
 @keyframes cqa-meter-in { from { transform: scaleX(0); } }
 
 @media (max-width: 760px) {
   .cqa-root .cqa-hero__cell { padding-left: 0; border-left: 0 !important; }
   .cqa-root .cqa-hero__cell + .cqa-hero__cell::before { left: 0; }
-  .cqa-root .cqa-page__index { display: none; }
 }

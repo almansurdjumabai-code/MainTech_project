@@ -1,0 +1,111 @@
+/* ═══════════════ CINEMA — scroll as a camera ═══════════════
+   Every scene is scrubbed by the scroll position (view/scroll timelines), so it plays forward and backward
+   with the wheel. No blur anywhere: depth comes from scale, perspective, masks (clip-path) and light (brightness).
+   Loaded last; overrides canvas.css / scroll.css keyframes. */
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+
+    /* ── Sections open like an iris: a slit widens while the camera tilts down onto it ── */
+    .cqa-root :is(.cqa-page > :not(.cqa-page__head):not(.cqa-hero), .cqa-dash__grid > *, .cqa-panel-grid > *) {
+      animation: cqa-c-in linear both, cqa-c-out linear both;
+      animation-timeline: view(), view();
+      animation-range: entry 0% cover 38%, exit 0% exit 100%;
+      transform-origin: 50% 100%;
+    }
+    @keyframes cqa-c-in {
+      from { opacity: 0; clip-path: inset(42% 8% 0 8% round 28px); transform: perspective(1400px) translateY(160px) rotateX(22deg) scale(.84); }
+      60% { opacity: 1; }
+      to { opacity: 1; clip-path: inset(-80px -80px -80px -80px round 0); transform: none; }
+    }
+    @keyframes cqa-c-out {
+      to { opacity: 0; transform: perspective(1400px) translateY(-90px) rotateX(-10deg) scale(.9); filter: brightness(.45); }
+    }
+    /* columns side by side arrive a beat apart */
+    .cqa-root :is(.cqa-dash__grid, .cqa-panel-grid) > :nth-child(even) { animation-range: entry 8% cover 46%, exit 0% exit 100%; }
+
+    /* ── Section headings: a line of type wipes up out of a mask ── */
+    .cqa-root .cqa-card :is(h2, h3):not(.cqa-modal *) {
+      animation: cqa-c-head linear both; animation-timeline: view(); animation-range: entry 30% cover 34%;
+    }
+    @keyframes cqa-c-head { from { clip-path: inset(0 0 100% 0); transform: translateY(70%) skewY(4deg); } to { clip-path: inset(-30% -5% -40% -5%); transform: none; } }
+
+    /* ── KPI strip: cells swing in on their left hinge, one after another ── */
+    .cqa-root .cqa-kpis { perspective: 1200px; }
+    .cqa-root .cqa-kpi { transform-origin: 0 50%; animation: cqa-c-hinge linear both; animation-timeline: view(); }
+    .cqa-root .cqa-kpi:nth-child(1) { animation-range: entry 0% cover 30%; }
+    .cqa-root .cqa-kpi:nth-child(2) { animation-range: entry 10% cover 36%; }
+    .cqa-root .cqa-kpi:nth-child(3) { animation-range: entry 20% cover 42%; }
+    .cqa-root .cqa-kpi:nth-child(4) { animation-range: entry 30% cover 48%; }
+    .cqa-root .cqa-kpi:nth-child(n+5) { animation-range: entry 40% cover 54%; }
+    @keyframes cqa-c-hinge { from { opacity: 0; transform: rotateY(-75deg) translateX(-30px); } to { opacity: 1; transform: none; } }
+
+    /* ── Rows: hard cuts from alternating sides with a mask ── */
+    .cqa-root :is(.cqa-table tbody tr, .cqa-ledger > *, .cqa-queue__item, .cqa-secgroup .cqa-item) {
+      animation: cqa-c-row linear both; animation-timeline: view(); animation-range: entry 0% cover 22%;
+    }
+    .cqa-root :is(.cqa-table tbody tr, .cqa-ledger > *, .cqa-queue__item, .cqa-secgroup .cqa-item):nth-child(even) { animation-name: cqa-c-row-r; }
+    @keyframes cqa-c-row { from { opacity: 0; transform: translateX(-140px) rotate(-1.5deg); clip-path: inset(0 100% 0 0); } to { opacity: 1; transform: none; clip-path: inset(-40px -40px -40px -40px); } }
+    @keyframes cqa-c-row-r { from { opacity: 0; transform: translateX(140px) rotate(1.5deg); clip-path: inset(0 0 0 100%); } to { opacity: 1; transform: none; clip-path: inset(-40px -40px -40px -40px); } }
+
+    /* ── Heatmap: tiles flip down like a departures board, column by column ── */
+    .cqa-root .cqa-heat { perspective: 900px; }
+    .cqa-root .cqa-heat__cell { transform-origin: 50% 0; animation: cqa-c-flip linear both; animation-timeline: view(); animation-range: entry 10% cover 30%; }
+    .cqa-root .cqa-heat__cell:nth-child(5n + 2) { animation-range: entry 20% cover 36%; }
+    .cqa-root .cqa-heat__cell:nth-child(5n + 3) { animation-range: entry 30% cover 42%; }
+    .cqa-root .cqa-heat__cell:nth-child(5n + 4) { animation-range: entry 40% cover 48%; }
+    .cqa-root .cqa-heat__cell:nth-child(5n) { animation-range: entry 50% cover 54%; }
+    @keyframes cqa-c-flip { from { opacity: 0; transform: rotateX(-100deg); filter: brightness(2); } to { opacity: 1; transform: none; filter: none; } }
+
+    /* ── Charts grow with the scroll ── */
+    .cqa-root .cqa-chart .cqa-chart__bar { transform-box: fill-box; transform-origin: 50% 100%; animation: cqa-c-grow-y linear both !important; animation-timeline: view() !important; animation-range: entry 20% cover 45% !important; }
+    .cqa-root .cqa-chart .cqa-chart__bar[style*="cqa-grow-x"] { transform-origin: 0 50%; animation-name: cqa-c-grow-x !important; }
+    .cqa-root .cqa-bar__fill { transform-origin: 0 50%; animation: cqa-c-grow-x linear both; animation-timeline: view(); animation-range: entry 20% cover 45%; }
+    @keyframes cqa-c-grow-y { from { transform: scaleY(0); } }
+    @keyframes cqa-c-grow-x { from { transform: scaleX(0); } }
+
+    /* ── Masthead: the camera pushes through the headline as you start scrolling ── */
+    .cqa-root .cqa-page__title .cqa-display {
+      transform-origin: 0 60%;
+      animation: cqa-c-push linear both; animation-timeline: scroll(root); animation-range: 0 520px;
+    }
+    @keyframes cqa-c-push { to { transform: translateY(150px) scale(1.32); opacity: 0; } }
+    .cqa-root .cqa-page__title .cqa-lead { animation: cqa-lead-in 1000ms var(--cqa-expo) 520ms both, cqa-c-lead linear both; animation-timeline: auto, scroll(root); animation-range: normal, 0 360px; }
+    @keyframes cqa-c-lead { to { transform: translateY(-40px); opacity: 0; } }
+    .cqa-root .cqa-page__art {
+      animation: cqa-art-in 1300ms var(--cqa-expo) 260ms both, cqa-c-art linear both;
+      animation-timeline: auto, scroll(root); animation-range: normal, 0 600px;
+    }
+    @keyframes cqa-c-art { to { transform: translateY(-160px) rotate(-14deg) scale(.7); opacity: 0; } }
+
+    /* ── Backdrop: slow dolly-in on the quality chart, dimming like a house light ── */
+    .cqa-root .cqa-bg svg { transform-origin: 70% 40%; animation: cqa-c-dolly linear both; animation-timeline: scroll(root); animation-range: 0 1400px; }
+    @keyframes cqa-c-dolly { to { transform: scale(1.25) translateY(-4%); opacity: .3; } }
+    .cqa-root .cqa-bg .b-line { animation: cqa-c-draw linear both; animation-timeline: scroll(root); animation-range: 0 900px; stroke-dashoffset: .55; }
+    @keyframes cqa-c-draw { to { stroke-dashoffset: 0; } }
+  }
+}
+
+/* ── Route change: a shutter. The new page opens from a horizontal slit while the old one sinks into the dark ── */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 900ms; animation-timing-function: cubic-bezier(.83, 0, .17, 1); }
+  @keyframes cqa-vt-old-fwd { to { transform: translateX(-6%) scale(.88); opacity: 0; filter: brightness(.35); } }
+  @keyframes cqa-vt-old-back { to { transform: translateX(6%) scale(.88); opacity: 0; filter: brightness(.35); } }
+  @keyframes cqa-vt-new-fwd { from { clip-path: inset(47% 0 47% 0); transform: translateX(8%) scale(1.1); filter: brightness(1.6); } to { clip-path: inset(0); transform: none; filter: none; } }
+  @keyframes cqa-vt-new-back { from { clip-path: inset(47% 0 47% 0); transform: translateX(-8%) scale(1.1); filter: brightness(1.6); } to { clip-path: inset(0); transform: none; filter: none; } }
+}
+
+/* ── Off switches ── */
+.cqa-root.cqa-motion-paused :is(.cqa-page > *, .cqa-dash__grid > *, .cqa-panel-grid > *, .cqa-kpi, .cqa-heat__cell, .cqa-table tbody tr, .cqa-ledger > *, .cqa-queue__item, .cqa-item,
+  .cqa-bar__fill, .cqa-bg svg, .cqa-bg .b-line, .cqa-page__title .cqa-display, .cqa-page__title .cqa-lead, .cqa-page__art, .cqa-card h2, .cqa-card h3) { animation: none !important; }
+.cqa-root.cqa-motion-paused .cqa-chart .cqa-chart__bar { animation: none !important; }
+
+/* ── Page subtitle: no entrance animation of its own (it used to restart when .cqa-page-enter
+   was removed → blink). It types itself in via fx.js typeLead(); these styles serve that. ── */
+.cqa-root .cqa-page__title .cqa-lead { animation: none !important; opacity: 1; transform: none; clip-path: none; filter: none; }
+.cqa-root .cqa-lead .cqa-type__off { visibility: hidden; }
+.cqa-root .cqa-lead .cqa-type__caret {
+  display: inline-block; width: 2px; height: 1.05em; margin: 0 1px 0 1px; vertical-align: -.16em;
+  background: var(--cqa-green, currentColor); border-radius: 1px;
+}
+.cqa-root .cqa-lead:not(.is-typing) .cqa-type__caret { display: none; }

@@ -38,14 +38,15 @@
   --cqa-shadow-float: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -18px rgba(7, 40, 22, .35), 0 2px 6px rgba(7, 40, 22, .06);
 
   /* One confident grotesk for the whole product (Onest: Cyrillic incl. Kazakh); mono only for IDs/time/code. */
-  --cqa-font-display: "Onest", "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  --cqa-font-sans: "Onest", "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --cqa-font-display: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --cqa-font-sans: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --cqa-font-serif: var(--cqa-font-sans);
-  --cqa-font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --cqa-font-num: "Geologica", "Golos Text", system-ui, sans-serif;
+  --cqa-font-mono: "Martian Mono", ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --cqa-features: "kern", "calt";
 
-  --cqa-r-card: 22px;
-  --cqa-r-media: 28px;
+  --cqa-r-card: 16px;
+  --cqa-r-media: 16px;
   --cqa-r-pill: 9999px;
   --cqa-r-sm: 12px;
 

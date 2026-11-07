@@ -1,4 +1,5 @@
 /** Small DOM / formatting helpers. No globals. */
+import { getLang } from './i18n.js';
 
 /** Marker for trusted HTML strings. */
 export class Raw {
@@ -77,8 +78,21 @@ export const storage = {
 
 export const round2 = (x) => Math.round((x + Number.EPSILON) * 100) / 100;
 export const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+
+const NUM_LOCALES = { ru: 'ru-RU', kz: 'kk-KZ', en: 'en-GB' };
+const nf = new Map();
+/** Cached Intl.NumberFormat for the current UI language. */
+function numFormat(opts) {
+  const key = getLang() + JSON.stringify(opts);
+  if (!nf.has(key)) nf.set(key, new Intl.NumberFormat(NUM_LOCALES[getLang()] || 'ru-RU', opts));
+  return nf.get(key);
+}
+/** Locale-aware number (RU/KZ: decimal comma). @param {number} n @param {number} [d] fraction digits */
+export const fmtNum = (n, d = 0) => numFormat({ minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: true }).format(n);
+/** Locale-aware USD amount. @param {number} n @param {number} [d] */
+export const fmtUsd = (n, d = 2) => numFormat({ style: 'currency', currency: 'USD', minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
 /** @param {number|null|undefined} n */
-export const fmtScore = (n) => (n == null || Number.isNaN(n) ? '—' : Number(n).toFixed(2));
+export const fmtScore = (n) => (n == null || Number.isNaN(n) ? '—' : fmtNum(Number(n), 2));
 
 /** @param {number} sec */
 export function fmtClock(sec) {

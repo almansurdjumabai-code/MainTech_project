@@ -35,7 +35,7 @@
 }
 .cqa-display {
   font-family: var(--cqa-font-display); font-size: clamp(44px, 6.4vw, 104px); font-weight: 300;
-  letter-spacing: -.055em; line-height: .92; text-wrap: balance;
+  letter-spacing: -.04em; line-height: .92; text-wrap: balance;
 }
 .cqa-h2 { font-family: var(--cqa-font-display); font-size: 30px; font-weight: 400; letter-spacing: -.035em; line-height: 1.1; }
 .cqa-h3 { font-family: var(--cqa-font-display); font-size: 16px; font-weight: 500; letter-spacing: -.02em; line-height: 1.3; }

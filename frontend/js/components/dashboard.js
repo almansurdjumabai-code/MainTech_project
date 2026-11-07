@@ -1,5 +1,5 @@
 /** Dashboard — all charts are hand-written inline SVG / CSS, no libraries. */
-import { html, render, raw, $, fmtScore } from '../core/utils.js';
+import { html, render, raw, $, fmtScore, fmtNum, fmtUsd } from '../core/utils.js';
 import { icon } from '../core/icons.js';
 import { t } from '../core/i18n.js';
 import { store, activeChecklist } from '../core/store.js';
@@ -8,9 +8,9 @@ import { api } from '../api/client.js';
 import { bootstrap } from '../core/actions.js';
 import { config } from '../config.js';
 import { createOdometer, emptyState, chartSkeleton } from './ui.js';
-import { navigate } from '../core/router.js';
 import { confirmDialog } from './modal.js';
 import { toast } from './toast.js';
+import { setLead } from '../core/fx.js';
 
 const pct = (x) => (x == null ? '—' : `${Math.round(x * 100)}%`);
 const DEFS = `<defs>
@@ -24,15 +24,15 @@ function histogram(h) {
   const bw = (W - pad.l - pad.r) / h.length;
   const y = (v) => pad.t + (H - pad.t - pad.b) * (1 - v / max);
   const ticks = [0, Math.ceil(max / 2), max];
-  return raw(`<svg class="cqa-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('dash.histogram')}">${DEFS}
+  return raw(`<svg class="cqa-chart" viewBox="0 0 ${W} ${H}" role="group" aria-label="${t('dash.histogram')}">${DEFS}
     ${ticks.map((v) => `<line class="cqa-chart__grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`).join('')}
     ${h.map((b, i) => {
       const x = pad.l + i * bw + 4; const yy = y(b.count); const hh = H - pad.b - yy;
       const band = b.from < 60 ? 'low' : b.from < 80 ? 'mid' : 'high';
-      return `<rect class="cqa-chart__hit" x="${x - 4}" y="${pad.t - 10}" width="${bw}" height="${H - pad.b - pad.t + 10}" rx="8" data-nav="/conversations?score=${band}" role="button" tabindex="0" aria-label="${t('score.' + band)} · ${b.from}–${b.to}: ${b.count}"><title>${t('dash.openFiltered')}: ${t('score.' + band)}</title></rect>
+      return `<a href="#/conversations?score=${band}&amp;from=dash" class="cqa-chart__link" aria-label="${t('score.' + band)} · ${b.from}–${b.to}: ${b.count}"><title>${t('dash.openFiltered')}: ${t('score.' + band)}</title><rect class="cqa-chart__hit" x="${x - 4}" y="${pad.t - 10}" width="${bw}" height="${H - pad.b - pad.t + 10}" rx="8"/></a>
         <rect class="cqa-chart__bar ${b.from >= 80 ? 'cqa-chart__bar--hi' : ''} ${b.from < 60 ? 'cqa-chart__bar--lo' : ''}" x="${x}" y="${yy}" width="${bw - 8}" height="${Math.max(0, hh)}" rx="4" style="animation-delay:${i * 40}ms" pointer-events="none"></rect>
-        ${b.count ? `<text class="cqa-chart__val" x="${x + (bw - 8) / 2}" y="${yy - 6}" text-anchor="middle">${b.count}</text>` : ''}
-        <text x="${x + (bw - 8) / 2}" y="${H - 8}" text-anchor="middle">${b.from}</text>`;
+        ${b.count ? `<text class="cqa-chart__val" x="${x + (bw - 8) / 2}" y="${yy - 6}" text-anchor="middle" pointer-events="none">${b.count}</text>` : ''}
+        <text x="${x + (bw - 8) / 2}" y="${H - 8}" text-anchor="middle" pointer-events="none">${b.from}</text>`;
     }).join('')}
   </svg>`);
 }
@@ -40,22 +40,24 @@ function histogram(h) {
 function bars(items, label) {
   // items: {label, avg, count, nav?}
   const W = 640; const row = 34; const H = items.length * row + 4; const x0 = 80; const bw = W - x0 - 110;
-  return raw(`<svg class="cqa-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">${DEFS}
+  return raw(`<svg class="cqa-chart" viewBox="0 0 ${W} ${H}" role="group" aria-label="${label}">${DEFS}
     ${items.map((it, i) => {
       const w = ((it.avg ?? 0) / 100) * bw;
-      const hit = it.nav ? `<rect class="cqa-chart__hit" x="-6" y="${i * row + 2}" width="${W + 12}" height="${row - 4}" rx="8" data-nav="${it.nav}" role="button" tabindex="0" aria-label="${it.label}: ${it.avg == null ? '—' : it.avg.toFixed(1)}"><title>${t('dash.openFiltered')}: ${it.label}</title></rect>` : '';
+      const hit = it.nav ? `<a href="#${it.nav}&amp;from=dash" class="cqa-chart__link" aria-label="${it.label}: ${it.avg == null ? '—' : fmtNum(it.avg, 1)}"><title>${t('dash.openFiltered')}: ${it.label}</title><rect class="cqa-chart__hit" x="-6" y="${i * row + 2}" width="${W + 12}" height="${row - 4}" rx="8"/></a>` : '';
       return `${hit}<text x="0" y="${i * row + 21}" style="fill:var(--cqa-ink);font-size:12px" pointer-events="none">${it.label}</text>
         <rect x="${x0}" y="${i * row + 10}" width="${bw}" height="14" rx="5" style="fill:var(--cqa-line)" pointer-events="none"/>
         <rect class="cqa-chart__bar cqa-chart__bar--hi" x="${x0}" y="${i * row + 10}" width="${w}" height="14" rx="5" style="transform-origin:left;animation-name:cqa-grow-x;animation-delay:${i * 60}ms" pointer-events="none"/>
-        <text class="cqa-chart__val" x="${W - 4}" y="${i * row + 21}" text-anchor="end" pointer-events="none">${it.avg == null ? '—' : it.avg.toFixed(1)} · ${it.count}</text>`;
+        <text class="cqa-chart__val" x="${W - 4}" y="${i * row + 21}" text-anchor="end" pointer-events="none">${it.avg == null ? '—' : fmtNum(it.avg, 1)} · ${it.count}</text>`;
     }).join('')}
   </svg>`);
 }
 
 function heatColor(p) {
   if (p == null) return 'background:var(--cqa-mist);color:var(--cqa-mute)';
-  if (p >= 0.5) return `background:rgba(81,175,61,${(0.12 + (p - 0.5) * 1.5).toFixed(2)});color:var(--cqa-ink)`;
-  return `background:rgba(179,38,30,${(0.12 + (0.5 - p) * 1.1).toFixed(2)});color:var(--cqa-ink)`;
+  // One hue, lightness carries the value (safe for red/green colour blindness); weak cells add an outline + weight.
+  const a = (0.06 + p * 0.74).toFixed(2);
+  if (p >= 0.5) return `--heat:${a};background:rgba(81,175,61,var(--heat));color:${p > 0.82 ? 'var(--cqa-heat-ink-strong)' : 'var(--cqa-ink)'}`;
+  return `--heat:${a};background:rgba(81,175,61,var(--heat));color:var(--cqa-red);box-shadow:inset 0 0 0 1.5px var(--cqa-red);font-weight:750`;
 }
 
 /** Assumptions for the savings estimate (shown to the user, not hidden). */
@@ -83,41 +85,65 @@ export function mount(root) {
         <span class="cqa-savings__val"><span data-sv-hours></span><small>${t('dash.hoursQa')}</small></span>
       </div>
       <div class="cqa-savings__cost">
-        <span><b class="cqa-num">$${sv.ai.toFixed(2)}</b> ${t('dash.aiCost')}</span>
-        <span class="cqa-savings__vs">${t('dash.insteadOf')} <s class="cqa-num">≈ $${Math.round(sv.human).toLocaleString('en-US')}</s> ${t('dash.humanQa')}</span>
+        <span><b class="cqa-num">${fmtUsd(sv.ai, 2)}</b> ${t('dash.aiCost')}</span>
+        <span class="cqa-savings__vs">${t('dash.insteadOf')} <s class="cqa-num">≈ ${fmtUsd(Math.round(sv.human), 0)}</s> ${t('dash.humanQa')}</span>
       </div>
       <span class="cqa-savings__note" title="${t('dash.savingsAssumptions', { chat: QA_MIN_CHAT, factor: QA_VOICE_FACTOR, rate: QA_RATE_USD })}">${icon('info', { size: 13 })}${t('dash.estimate')}</span>
     </aside>`;
+  }
+
+  /**
+   * Paint the page but keep the headline and subtitle nodes that are already on screen.
+   * The dashboard draws twice on open (skeleton, then data) and again on every store change;
+   * re-creating the <h1> restarted its letter-by-letter entrance — the headline blinked out and back in.
+   */
+  function paint(tpl) {
+    const tmp = document.createElement('div');
+    render(tmp, tpl);
+    const next = /** @type {HTMLElement|null} */ (tmp.firstElementChild);
+    const cur = /** @type {HTMLElement|null} */ (root.querySelector(':scope > .cqa-page'));
+    if (!next) return;
+    const curHead = cur?.querySelector(':scope > .cqa-page__head');
+    const nextHead = next.querySelector(':scope > .cqa-page__head');
+    const curTitle = curHead?.querySelector(':scope > .cqa-page__title');
+    if (!cur || !curHead || !nextHead || !curTitle) { root.replaceChildren(next); return; }
+    // The title block never leaves the document (moving a node restarts its CSS animations):
+    // only the subtitle text and the head's other parts (savings widget) are updated around it.
+    const lead = /** @type {HTMLElement|null} */ (curTitle.querySelector('.cqa-lead'));
+    const text = (nextHead.querySelector('.cqa-page__title .cqa-lead')?.textContent || '').trim();
+    if (lead && text) setLead(lead, text);
+    [...curHead.children].forEach((c) => { if (c !== curTitle) c.remove(); });
+    [...nextHead.children].forEach((c) => { if (!c.classList.contains('cqa-page__title')) curHead.appendChild(c); });
+    [...cur.children].forEach((c) => { if (c !== curHead) c.remove(); });
+    [...next.children].forEach((c) => { if (c !== nextHead) cur.appendChild(c); });
   }
 
   function draw() {
     const s = store.get();
     const st = s.loading ? null : computeStats(s.conversations, s.appeals, activeChecklist(s));
     if (!st || !ready) {
-      render(root, html`<div class="cqa-page"><div class="cqa-page__head"><div class="cqa-page__title">
-        <span class="cqa-eyebrow">${t('dash.eyebrow')}</span><h1 class="cqa-display">${t('dash.title')}</h1>
-        <p class="cqa-lead">${t('common.loading')}…</p></div><span class="cqa-page__index" aria-hidden="true">04</span></div>
+      paint(html`<div class="cqa-page"><div class="cqa-page__head"><div class="cqa-page__title"><h1 class="cqa-display">${t('dash.title')}</h1>
+        <p class="cqa-lead" aria-busy="true">&nbsp;</p></div></div>
         <div class="cqa-kpis">${Array.from({ length: 5 }, () => html`<div class="cqa-kpi"><span class="cqa-skel" style="height:12px;width:50%"></span><span class="cqa-skel" style="height:44px;width:70%"></span><span class="cqa-skel" style="height:10px;width:60%"></span></div>`)}</div>
         ${chartSkeleton(4)}</div>`);
       return;
     }
-    const head = html`<div class="cqa-page__head"><div class="cqa-page__title">
-      <span class="cqa-eyebrow">${t('dash.eyebrow')}</span><h1 class="cqa-display">${t('dash.title')}</h1>
-      <p class="cqa-lead">${t('dash.lead', { n: st.evaluatedCount, total: st.total })}</p></div><span class="cqa-page__index" aria-hidden="true">04</span>
+    const head = html`<div class="cqa-page__head"><div class="cqa-page__title"><h1 class="cqa-display">${t('dash.title')}</h1>
+      <p class="cqa-lead">${t('dash.lead', { n: st.evaluatedCount, total: st.total })}</p></div>
       ${st.evaluatedCount ? savingsWidget(savings(s.conversations)) : ''}</div>`;
     const resetBtn = config.USE_MOCK ? html`<div class="cqa-row" style="justify-content:flex-end;margin-top:28px"><button type="button" class="cqa-btn cqa-btn--line cqa-btn--sm" data-act="reset">${icon('refresh', { size: 16 })}${t('dash.resetMock')}</button></div>` : '';
     if (!st.evaluatedCount) {
-      render(root, html`<div class="cqa-page">${head}<div class="cqa-card">${emptyState({ title: t('dash.empty'), text: t('dash.emptyHint'), action: html`<a class="cqa-btn cqa-btn--primary" href="#/conversations">${t('nav.conversations')}</a>` })}</div>${resetBtn}</div>`);
+      paint(html`<div class="cqa-page">${head}<div class="cqa-card">${emptyState({ title: t('dash.empty'), text: t('dash.emptyHint'), action: html`<a class="cqa-btn cqa-btn--primary" href="#/conversations">${t('nav.conversations')}</a>` })}</div>${resetBtn}</div>`);
       return;
     }
-    render(root, html`<div class="cqa-page">${head}
+    paint(html`<div class="cqa-page">${head}
       <div class="cqa-kpis">
         <div class="cqa-kpi cqa-kpi--vault" style="--i:0"><span class="cqa-eyebrow">${t('dash.avg')}</span><span class="cqa-kpi__val cqa-num" data-odo></span>
           <span class="cqa-kpi__sub">${t('dash.avgAI')}: ${fmtScore(st.avgAI)}</span></div>
         <div class="cqa-kpi" style="--i:1"><span class="cqa-eyebrow">${t('dash.evaluated')}</span><span class="cqa-kpi__val cqa-num">${st.evaluatedCount}<span class="cqa-mute" style="font-size:20px"> / ${st.total}</span></span>
           <span class="cqa-kpi__sub">${st.byChannel.map((c) => `${t('channel.' + c.channel)}: ${c.count}`).join(' · ')}</span></div>
-        <div class="cqa-kpi cqa-kpi--link" style="--i:2" data-nav="/conversations?gross=1" role="button" tabindex="0" title="${t('dash.openFiltered')}"><span class="cqa-eyebrow">${t('dash.gross')}</span><span class="cqa-kpi__val cqa-num" style="${st.gross ? 'color:var(--cqa-red)' : ''}">${st.gross}</span>
-          <span class="cqa-kpi__sub">${t('dash.grossSub')}</span></div>
+        <a class="cqa-kpi cqa-kpi--link" style="--i:2" href="#/conversations?gross=1&amp;from=dash" title="${t('dash.openFiltered')}"><span class="cqa-eyebrow">${t('dash.gross')}</span><span class="cqa-kpi__val cqa-num" style="${st.gross ? 'color:var(--cqa-red)' : ''}">${st.gross}</span>
+          <span class="cqa-kpi__sub">${t('dash.grossSub')}</span></a>
         <div class="cqa-kpi" style="--i:3"><span class="cqa-eyebrow">${t('dash.appeals')}</span><span class="cqa-kpi__val cqa-num">${st.appeals.total}</span>
           <span class="cqa-kpi__sub">${t('dash.appealsSub', { open: st.appeals.open, changed: st.appeals.changed, decided: st.appeals.decided })}</span></div>
         <div class="cqa-kpi" style="--i:4"><span class="cqa-eyebrow">${t('dash.accuracy')}</span><span class="cqa-kpi__val cqa-num" style="color:var(--cqa-green-text)">${pct(st.appeals.aiAccuracy)}</span>
@@ -131,11 +157,11 @@ export function mount(root) {
           ${bars(st.byChannel.map((c) => ({ label: t('channel.' + c.channel), avg: c.avg, count: c.count, nav: `/conversations?channel=${c.channel}` })), t('dash.byChannel'))}
         </section>
         <section class="cqa-card cqa-dash__cell--wide cqa-stack-y"><div class="cqa-row cqa-row--between cqa-row--wrap"><h2 class="cqa-h3">${t('dash.heatmap')}</h2><span class="cqa-small cqa-muted">${t('dash.heatmapHint')}</span></div>
-          <div class="cqa-heat" style="grid-template-columns:minmax(200px,2fr) repeat(${st.langs.length + 1},minmax(64px,1fr))" role="table" aria-label="${t('dash.heatmap')}">
-            <span role="columnheader"></span>${st.langs.map((l) => html`<button type="button" class="cqa-heat__head cqa-heat__head--link" role="columnheader" data-nav="/conversations?lang=${l}" title="${t('dash.openFiltered')}: ${l}">${l}</button>`)}<span class="cqa-heat__head" role="columnheader">${t('common.all')}</span>
-            ${st.criteria.map((c, i) => html`<span class="cqa-heat__label" role="rowheader"><span class="cqa-mono cqa-mute">${String(i + 1).padStart(2, '0')}</span><span title="${c.title}">${c.title}</span></span>
-              ${st.langs.map((l) => html`<span class="cqa-heat__cell cqa-heat__cell--link" role="cell" style="${heatColor(c.byLang[l])}" data-nav="/conversations?lang=${l}" title="${t('dash.openFiltered')}: ${l}">${pct(c.byLang[l])}</span>`)}
-              <span class="cqa-heat__cell" role="cell" style="${heatColor(c.pass)};font-weight:600">${pct(c.pass)}</span>`)}
+          <div class="cqa-heat" style="grid-template-columns:minmax(200px,2fr) repeat(${st.langs.length + 1},minmax(64px,1fr))" role="group" aria-label="${t('dash.heatmap')}">
+            <span aria-hidden="true"></span>${st.langs.map((l) => html`<a class="cqa-heat__head cqa-heat__head--link" href="#/conversations?lang=${l}&amp;from=dash" title="${t('dash.openFiltered')}: ${l}">${l}</a>`)}<span class="cqa-heat__head">${t('common.all')}</span>
+            ${st.criteria.map((c, i) => html`<span class="cqa-heat__label"><span class="cqa-mono cqa-mute" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span><span title="${c.title}">${c.title}</span></span>
+              ${st.langs.map((l) => html`<a class="cqa-heat__cell cqa-heat__cell--link" style="${heatColor(c.byLang[l])}" href="#/conversations?lang=${l}&amp;from=dash" aria-label="${c.title} · ${l}: ${pct(c.byLang[l])}" title="${t('dash.openFiltered')}: ${l}">${pct(c.byLang[l])}</a>`)}
+              <span class="cqa-heat__cell" style="${heatColor(c.pass)};font-weight:600" aria-label="${c.title} · ${t('common.all')}: ${pct(c.pass)}">${pct(c.pass)}</span>`)}
           </div></section>
         <section class="cqa-card cqa-dash__cell cqa-stack-y"><h2 class="cqa-h3">${t('dash.naRate')}</h2>
           ${st.criteria.map((c) => html`<div class="cqa-hbar"><span>${c.title}</span><span class="cqa-hbar__track"><span class="cqa-hbar__fill" style="width:${Math.round(c.naRate * 100)}%"></span></span><span class="cqa-num cqa-mono" style="text-align:right">${pct(c.naRate)}</span></div>`)}
@@ -153,17 +179,7 @@ export function mount(root) {
     if (hEl) createOdometer(/** @type {HTMLElement} */ (hEl), { decimals: 1 }).set(Math.round(savings(s.conversations).hours * 10) / 10);
   }
 
-  const onNav = (e) => {
-    const n = e.target instanceof Element ? e.target.closest('[data-nav]') : null;
-    if (!n) return false;
-    if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return false;
-    e.preventDefault();
-    navigate(n.getAttribute('data-nav'));
-    return true;
-  };
-  const onKey = (e) => { onNav(e); };
   const onClick = async (e) => {
-    if (onNav(e)) return;
     if (!(e.target instanceof Element) || !e.target.closest('[data-act="reset"]')) return;
     if (!(await confirmDialog({ title: t('dash.resetMock'), message: t('dash.resetText'), confirmLabel: t('dash.resetMock'), danger: true }))) return;
     await api.reset?.();
@@ -171,10 +187,9 @@ export function mount(root) {
     toast({ kind: 'success', title: t('dash.resetDone') });
   };
   root.addEventListener('click', onClick);
-  root.addEventListener('keydown', onKey);
   draw();
   const unsub = store.subscribe((s, p) => {
     if (s.conversations !== p.conversations || s.appeals !== p.appeals || s.loading !== p.loading || s.checklists !== p.checklists) draw();
   });
-  return { update() {}, destroy() { clearTimeout(readyTimer); unsub(); root.removeEventListener('click', onClick); root.removeEventListener('keydown', onKey); root.innerHTML = ''; } };
+  return { update() {}, destroy() { clearTimeout(readyTimer); unsub(); root.removeEventListener('click', onClick); root.innerHTML = ''; } };
 }

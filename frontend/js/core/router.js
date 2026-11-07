@@ -30,8 +30,12 @@ export function parseHash(hash = location.hash) {
   return { name: 'conversations', params: {}, query: new URLSearchParams(qs), path: '/conversations' };
 }
 
+/** Set when navigation is initiated inside the app (links, navigate()) — not by Back/Forward. */
+export const navOrigin = { inApp: false };
+
 /** @param {string} path e.g. '/conversation/p1-ru-001?msg=3' */
 export function navigate(path) {
+  navOrigin.inApp = true;
   const next = '#' + path;
   if (location.hash === next) window.dispatchEvent(new HashChangeEvent('hashchange'));
   else location.hash = next;

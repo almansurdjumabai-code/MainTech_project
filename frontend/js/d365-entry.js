@@ -30,7 +30,6 @@ async function start() {
   const p = readParams();
   if (p.lang) store.set({ lang: /** @type {any} */ (p.lang) });
   if (p.role === 'qa' || p.role === 'reviewer') store.set({ role: p.role });
-  if (p.theme === 'dark' || p.theme === 'light') store.set({ theme: p.theme });
   root.dataset.theme = store.get().theme;
   await initI18n(store.get().lang);
   setModalHost(root);

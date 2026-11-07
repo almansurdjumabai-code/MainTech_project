@@ -27,7 +27,7 @@ export function createStore(initial) {
  * @typedef {Object} AppState
  * @property {'qa'|'reviewer'} role
  * @property {'ru'|'kz'|'en'} lang
- * @property {'light'|'dark'} theme
+ * @property {'dark'} theme  the app ships a single dark theme
  * @property {boolean} loading
  * @property {string|null} loadError
  * @property {any[]} conversations     list items (conversation + `evaluation` summary)
@@ -46,7 +46,7 @@ export function createStore(initial) {
 export const store = createStore({
   role: storage.get('role', 'qa'),
   lang: storage.get('lang', 'ru'),
-  theme: storage.get('theme', 'light'),
+  theme: 'dark',
   loading: true,
   loadError: null,
   conversations: [],

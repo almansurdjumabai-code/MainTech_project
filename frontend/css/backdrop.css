@@ -1,0 +1,72 @@
+/* ═══════════════ BACKDROP — "conversation quality index" chart behind the app ═══════════════
+   Replaces the gradient aurora. Muted, theme-aware, decorative. Loaded last. */
+
+/* The old blurred aurora blobs are gone */
+.cqa-root .cqa-app::before { content: none; }
+
+.cqa-root .cqa-bg {
+  position: fixed; inset: -4% -2% -8%; z-index: 0; pointer-events: none; color: var(--cqa-green-deep);
+  will-change: transform; animation: cqa-bg-in 1600ms var(--cqa-expo) both;
+}
+.cqa-root .cqa-bg svg { width: 100%; height: 100%; display: block; }
+
+/* Grid */
+.cqa-root .cqa-bg .b-grid { stroke: rgba(15, 84, 49, .055); stroke-width: 1; }
+.cqa-root .cqa-bg .b-grid-major { stroke: rgba(15, 84, 49, .08); stroke-width: 1; }
+
+/* Chart */
+.cqa-root .cqa-bg .b-up { fill: rgba(15, 84, 49, .11); }
+.cqa-root .cqa-bg .b-down { fill: rgba(7, 18, 12, .06); }
+.cqa-root .cqa-bg .b-wick { stroke: rgba(15, 84, 49, .12); stroke-width: 1; }
+.cqa-root .cqa-bg .b-vol { fill: rgba(15, 84, 49, .06); }
+.cqa-root .cqa-bg .b-area-top { stop-color: #51AF3D; stop-opacity: .09; }
+.cqa-root .cqa-bg .b-area-bottom { stop-color: #51AF3D; stop-opacity: 0; }
+.cqa-root .cqa-bg .b-line {
+  fill: none; stroke: rgba(81, 175, 61, .45); stroke-width: 1.6; stroke-linecap: round;
+  stroke-dasharray: 1; stroke-dashoffset: 1; animation: cqa-bg-draw 3200ms cubic-bezier(.45, 0, .2, 1) 500ms forwards;
+}
+
+/* Verdict thresholds + score axis */
+.cqa-root .cqa-bg .b-threshold { stroke-width: 1; stroke-dasharray: 2 8; }
+.cqa-root .cqa-bg .b-threshold--80 { stroke: rgba(81, 175, 61, .4); }
+.cqa-root .cqa-bg .b-threshold--60 { stroke: rgba(179, 38, 30, .28); }
+.cqa-root .cqa-bg .b-label { font: 500 12px var(--cqa-font-mono); letter-spacing: .02em; }
+.cqa-root .cqa-bg .b-label--80 { fill: rgba(15, 84, 49, .5); }
+.cqa-root .cqa-bg .b-label--60 { fill: rgba(179, 38, 30, .42); }
+.cqa-root .cqa-bg .b-axis { font: 500 11px var(--cqa-font-mono); fill: rgba(7, 18, 12, .28); }
+.cqa-root .cqa-bg .b-axis--title { font-weight: 600; letter-spacing: .08em; text-transform: uppercase; fill: rgba(15, 84, 49, .4); }
+.cqa-root .cqa-bg .b-tick { stroke: rgba(7, 18, 12, .2); stroke-width: 1; }
+
+/* Slow horizontal drift (transform only) */
+.cqa-root .cqa-bg__drift { animation: cqa-bg-drift 90s ease-in-out infinite alternate; }
+
+/* Dark theme: lime on near-black */
+.cqa-root[data-theme="dark"] .cqa-bg .b-grid { stroke: rgba(184, 242, 138, .04); }
+.cqa-root[data-theme="dark"] .cqa-bg .b-grid-major { stroke: rgba(184, 242, 138, .06); }
+.cqa-root[data-theme="dark"] .cqa-bg .b-up { fill: rgba(81, 175, 61, .16); }
+.cqa-root[data-theme="dark"] .cqa-bg .b-down { fill: rgba(255, 255, 255, .05); }
+.cqa-root[data-theme="dark"] .cqa-bg .b-wick { stroke: rgba(184, 242, 138, .12); }
+.cqa-root[data-theme="dark"] .cqa-bg .b-vol { fill: rgba(184, 242, 138, .05); }
+.cqa-root[data-theme="dark"] .cqa-bg .b-line { stroke: rgba(184, 242, 138, .45); }
+.cqa-root[data-theme="dark"] .cqa-bg .b-label--80 { fill: rgba(184, 242, 138, .45); }
+.cqa-root[data-theme="dark"] .cqa-bg .b-label--60 { fill: rgba(240, 122, 112, .45); }
+.cqa-root[data-theme="dark"] .cqa-bg .b-axis { fill: rgba(255, 255, 255, .25); }
+.cqa-root[data-theme="dark"] .cqa-bg .b-axis--title { fill: rgba(184, 242, 138, .4); }
+.cqa-root[data-theme="dark"] .cqa-bg .b-tick { stroke: rgba(255, 255, 255, .18); }
+
+/* The app sits above the backdrop */
+.cqa-root > .cqa-shell { position: relative; z-index: 1; }
+.cqa-root.cqa-motion-paused .cqa-bg__drift { animation-play-state: paused; }
+
+@keyframes cqa-bg-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cqa-bg-draw { to { stroke-dashoffset: 0; } }
+@keyframes cqa-bg-drift { from { transform: translateX(0); } to { transform: translateX(-80px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cqa-root .cqa-bg__drift { animation: none; }
+  .cqa-root .cqa-bg .b-line { stroke-dashoffset: 0; animation: none; }
+}
+@media print { .cqa-root .cqa-bg { display: none; } }
+
+/* ── Headlines: a touch lighter than 900 ── */
+.cqa-root .cqa-display { font-weight: 760; letter-spacing: -.04em; }

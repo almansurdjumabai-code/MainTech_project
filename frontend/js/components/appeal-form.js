@@ -96,8 +96,8 @@ export function openAppealForm({ evaluation, checklist, criterionId, appeals }) 
       </label>
       <div class="cqa-card" data-current style="padding:16px 18px"></div>
       <label class="cqa-field"><span class="cqa-field__label">${t('appeal.comment')}</span>
-        <textarea class="cqa-textarea" name="comment" rows="4" minlength="10" autofocus placeholder="${t('appeal.commentPh')}" required></textarea>
-        <span class="cqa-field__hint" data-hint>${t('appeal.commentHint')}</span>
+        <textarea class="cqa-textarea" name="comment" rows="4" minlength="10" autofocus aria-describedby="cqa-appeal-hint" placeholder="${t('appeal.commentPh')}" required></textarea>
+        <span class="cqa-field__hint" id="cqa-appeal-hint" data-hint>${t('appeal.commentHint')} · Ctrl/⌘+Enter</span>
       </label>`,
     footer: html`
       <button type="button" class="cqa-btn cqa-btn--secondary" data-close="">${t('common.cancel')}</button>

@@ -1,5 +1,5 @@
 /** Shared presentational helpers: pills, badges, odometer, gauge, empty states. */
-import { html, raw, esc, langCode, isVoice, prefersReducedMotion } from '../core/utils.js';
+import { html, raw, esc, langCode, isVoice, prefersReducedMotion, fmtNum, fmtUsd } from '../core/utils.js';
 import { icon } from '../core/icons.js';
 import { t } from '../core/i18n.js';
 import { normalizeAnswer, maxStep } from '../core/scoring.js';
@@ -107,8 +107,8 @@ export function modelMode(model) {
   return html`<span class="cqa-mode cqa-mode--${local ? 'local' : 'cloud'}" title="${model.name}">
     ${icon(local ? 'cpu' : 'cloud', { size: 14 })}
     <b>${local ? t('mode.local') : t('mode.cloud')}</b>
-    <span class="cqa-num">$${Number(model.costUsd || 0).toFixed(local ? 2 : 3)} / ${t('mode.call')}</span>
-    <span class="cqa-mode__time cqa-num">≈ ${(model.avgMs / 1000).toFixed(1)} s</span>
+    <span class="cqa-num">${fmtUsd(Number(model.costUsd || 0), local ? 2 : 3)} / ${t('mode.call')}</span>
+    <span class="cqa-mode__time cqa-num">≈ ${fmtNum(model.avgMs / 1000, 1)} s</span>
   </span>`;
 }
 
@@ -124,7 +124,7 @@ export function createOdometer(el, { decimals = 2 } = {}) {
   let shape = '';
   /** @param {number|null} v */
   function set(v) {
-    const str = v == null || !Number.isFinite(v) ? '—' : Number(v).toFixed(decimals);
+    const str = v == null || !Number.isFinite(v) ? '—' : fmtNum(v, decimals);
     el.setAttribute('aria-label', str);
     el.setAttribute('role', 'img');
     const sh = str.replace(/\d/g, '0');
@@ -171,7 +171,7 @@ export function setGauge(root, value) {
 export function deltaChip(d, paper = false) {
   if (d == null || !Number.isFinite(d)) return '';
   const k = Math.abs(d) < 0.005 ? 'flat' : d > 0 ? 'up' : 'down';
-  const txt = k === 'flat' ? '±0.00' : `${d > 0 ? '▲ +' : '▼ −'}${Math.abs(d).toFixed(2)}`;
+  const txt = k === 'flat' ? `±${fmtNum(0, 2)}` : `${d > 0 ? '▲ +' : '▼ −'}${fmtNum(Math.abs(d), 2)}`;
   return html`<span class="cqa-delta cqa-delta--${k} ${paper ? 'cqa-delta--paper' : ''}">${txt}</span>`;
 }
 

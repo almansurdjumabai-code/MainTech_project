@@ -13,27 +13,34 @@ import { config } from '../config.js';
 import { langBadge, channelBadge, emptyState, skeleton, tableSkeleton, scoreTone, appealBadge, createOdometer, modelMode } from './ui.js';
 import { toast, errorToast } from './toast.js';
 import { renderHero, sparkline, meter, split } from './hero.js';
+import { pageArt } from './page-art.js';
 import { openModal } from './modal.js';
+import { setLead } from '../core/fx.js';
 
 const VERDICTS = ['pass', 'fail', 'manual', 'dispute', 'none', 'running'];
+/** Rows rendered per step — keeps the DOM small for 65+ conversation datasets. */
+const PAGE = 50;
 const SCORES = ['low', 'mid', 'high'];
 
 /** @param {HTMLElement} root @param {{query?: Record<string,string>}} [props] */
 export function mount(root, props = {}) {
-  const ui = { q: '', channel: '', lang: '', status: '', score: '', gross: false, fromDash: false, sort: 'id', dir: 1, selected: new Set(), groupId: store.get().dataset || config.DEFAULT_GROUP_ID };
+  const ui = { q: '', channel: '', lang: '', status: '', score: '', gross: false, fromDash: false, sort: 'id', dir: 1, limit: PAGE, selected: new Set(), groupId: store.get().dataset || config.DEFAULT_GROUP_ID };
   let skelTimer = 0;
 
   /** Filters can arrive from a link, e.g. dashboard: #/conversations?lang=KZ&score=low&gross=1 */
   function applyQuery(q = {}) {
-    const has = ['lang', 'score', 'status', 'channel', 'gross'].some((k) => q[k] != null);
+    const has = ['lang', 'score', 'status', 'channel', 'gross', 'q', 'sort'].some((k) => q[k] != null);
     if (!has) return false;
-    Object.assign(ui, { lang: '', score: '', status: '', channel: '', gross: false });
+    Object.assign(ui, { lang: '', score: '', status: '', channel: '', gross: false, q: '', sort: 'id', dir: 1 });
+    if (typeof q.q === 'string') ui.q = q.q.slice(0, 80);
+    if (['id', 'channel', 'lang', 'messages', 'duration', 'status', 'score', 'gross', 'appeal'].includes(q.sort)) ui.sort = q.sort;
+    if (q.dir === 'desc') ui.dir = -1;
     if (['RU', 'KZ', 'EN'].includes(q.lang)) ui.lang = q.lang;
     if (SCORES.includes(q.score)) ui.score = q.score;
     if (VERDICTS.includes(q.status)) ui.status = q.status;
     if (q.channel === 'chat' || q.channel === 'voice') ui.channel = q.channel;
     if (q.gross === '1') ui.gross = true;
-    ui.fromDash = true;
+    ui.fromDash = q.from === 'dash';
     return true;
   }
   applyQuery(props.query);
@@ -44,11 +51,10 @@ export function mount(root, props = {}) {
   render(root, html`<div class="cqa-page">
     <div class="cqa-page__head">
       <div class="cqa-page__title">
-        <span class="cqa-eyebrow">${t('list.eyebrow')}</span>
         <h1 class="cqa-display">${t('list.title')}</h1>
         <p class="cqa-lead" data-subtitle></p>
       </div>
-      <span class="cqa-page__index" aria-hidden="true">01</span>
+      ${pageArt('conversations')}
     </div>
     <div data-hero></div>
     <div class="cqa-panel-grid">
@@ -81,7 +87,7 @@ export function mount(root, props = {}) {
 
   function drawFilters() {
     render($filters, html`
-      <div class="cqa-search">${icon('search', { size: 16 })}<input class="cqa-input" type="search" data-f="q" placeholder="${t('list.search')}" value="${ui.q}" aria-label="${t('list.search')}"></div>
+      <div class="cqa-search">${icon('search', { size: 16 })}<input class="cqa-input" type="search" name="q" autocomplete="off" spellcheck="false" inputmode="search" data-f="q" placeholder="${t('list.search')}" value="${ui.q}" aria-label="${t('list.search')}"></div>
       <select class="cqa-select cqa-select--sm" data-f="channel" style="width:auto" aria-label="${t('list.col.channel')}">
         <option value="">${t('list.allChannels')}</option><option value="chat" ${ui.channel === 'chat' ? 'selected' : ''}>${t('channel.chat')}</option><option value="voice" ${ui.channel === 'voice' ? 'selected' : ''}>${t('channel.voice')}</option></select>
       <div class="cqa-seg" role="group" aria-label="${t('list.col.lang')}">${['', 'RU', 'KZ', 'EN'].map((l) => html`<button type="button" class="cqa-seg__btn ${ui.lang === l ? 'is-active' : ''}" data-lang-f="${l}">${l || t('common.all')}</button>`)}</div>
@@ -170,10 +176,27 @@ export function mount(root, props = {}) {
     return v < 60 ? 'low' : v < 80 ? 'mid' : 'high';
   };
 
+  /** The URL mirrors filters, search and sort (shareable, survives reload / Back). */
+  function syncUrl() {
+    const p = new URLSearchParams();
+    if (ui.lang) p.set('lang', ui.lang);
+    if (ui.score) p.set('score', ui.score);
+    if (ui.status) p.set('status', ui.status);
+    if (ui.channel) p.set('channel', ui.channel);
+    if (ui.gross) p.set('gross', '1');
+    if (ui.q.trim()) p.set('q', ui.q.trim());
+    if (ui.sort !== 'id' || ui.dir < 0) { p.set('sort', ui.sort); if (ui.dir < 0) p.set('dir', 'desc'); }
+    if (ui.fromDash) p.set('from', 'dash');
+    const qs = p.toString();
+    history.replaceState(history.state, '', `#/conversations${qs ? '?' + qs : ''}`);
+  }
+
   /** Short skeleton while filters re-apply, so the table feels networked. */
   function refilter() {
     clearTimeout(skelTimer);
     render($table, tableSkeleton(7));
+    ui.limit = PAGE;
+    syncUrl();
     skelTimer = window.setTimeout(() => { tableShown = false; drawTable(); drawRun(); }, 380);
   }
 
@@ -234,7 +257,7 @@ export function mount(root, props = {}) {
     const allSel = list.length > 0 && list.every((c) => ui.selected.has(c.conversation_id));
     $(root, '[data-count]').textContent = t('list.shown', { n: list.length, total: s.conversations.length });
     const evaluated = s.conversations.filter((c) => c.evaluation).length;
-    $sub.textContent = t('list.subtitle', { total: s.conversations.length, done: evaluated, dataset: s.dataset });
+    setLead($sub, t('list.subtitle', { total: s.conversations.length, done: evaluated, dataset: s.dataset }));
     if (!s.conversations.length) {
       render($table, html`<div class="cqa-card">${emptyState({ title: t('list.emptyTitle'), text: t('list.emptyText'), action: html`<button type="button" class="cqa-btn cqa-btn--primary" data-act="load-dev">${t('list.loadDev')}</button>` })}</div>`);
       return;
@@ -244,16 +267,16 @@ export function mount(root, props = {}) {
     tableShown = true;
     render($table, html`<div class="cqa-table-wrap"><table class="cqa-table ${enter ? 'cqa-table--enter' : ''}">
       <thead><tr>
-        <th style="width:44px"><input type="checkbox" class="cqa-check" data-sel-all ${allSel ? 'checked' : ''} aria-label="${t('list.selectAll')}"></th>
+        <th style="width:52px"><label class="cqa-hit"><input type="checkbox" data-sel-all ${allSel ? 'checked' : ''} aria-label="${t('list.selectAll')}"></label></th>
         ${th('id', 'ID')}${th('channel', t('list.col.channel'))}${th('lang', t('list.col.lang'))}${th('messages', t('list.col.messages'), true)}${th('duration', t('list.col.duration'), true)}
         ${th('status', t('list.col.status'))}${th('score', t('list.col.score'), true)}${th('gross', t('list.col.gross'))}${th('appeal', t('list.col.appeal'))}
         <th style="width:48px"><span class="cqa-sr">${t('list.open')}</span></th>
       </tr></thead>
-      <tbody>${list.map((c, i) => {
+      <tbody>${list.slice(0, ui.limit).map((c, i) => {
         const total = c.evaluation?.total;
         return html`<tr data-id="${c.conversation_id}" class="${ui.selected.has(c.conversation_id) ? 'is-selected' : ''}" style="--r:${Math.min(i, 24)}">
-          <td><input type="checkbox" data-sel="${c.conversation_id}" ${ui.selected.has(c.conversation_id) ? 'checked' : ''} aria-label="${t('list.select')} ${c.conversation_id}"></td>
-          <td><a class="cqa-mono" href="${convLink(c.conversation_id)}" style="color:var(--cqa-ink);font-weight:500">${c.conversation_id}</a></td>
+          <td><label class="cqa-hit"><input type="checkbox" data-sel="${c.conversation_id}" ${ui.selected.has(c.conversation_id) ? 'checked' : ''} aria-label="${t('list.select')} ${c.conversation_id}"></label></td>
+          <td><a class="cqa-mono" translate="no" href="${convLink(c.conversation_id)}" style="color:var(--cqa-ink);font-weight:500">${c.conversation_id}</a></td>
           <td>${channelBadge(c)}</td>
           <td>${langBadge(c.language)}</td>
           <td class="cqa-td-num cqa-num">${c.messages}</td>
@@ -267,7 +290,8 @@ export function mount(root, props = {}) {
           <td>${appealBadge(c.appealStatus) || html`<span class="cqa-mute">—</span>`}</td>
           <td class="cqa-td-go"><span class="cqa-go" aria-hidden="true">${icon('right', { size: 16 })}</span></td>
         </tr>`;
-      })}</tbody></table></div>`);
+      })}</tbody></table></div>
+      ${list.length > ui.limit ? html`<div class="cqa-more"><button type="button" class="cqa-btn cqa-btn--secondary" data-act="more">${t('list.more', { n: Math.min(PAGE, list.length - ui.limit) })}</button><span class="cqa-small cqa-mute">${t('list.shown', { n: ui.limit, total: list.length })}</span></div>` : ''}`);
     const sa = /** @type {HTMLInputElement|null} */ ($(root, '[data-sel-all]'));
     if (sa) sa.indeterminate = !allSel && list.some((c) => ui.selected.has(c.conversation_id));
   }
@@ -285,6 +309,8 @@ export function mount(root, props = {}) {
     const btn = /** @type {HTMLButtonElement} */ ($(root, '[data-load]'));
     const msg = $(root, '[data-load-msg]');
     btn.disabled = true;
+    btn.classList.add('is-loading');
+    btn.setAttribute('aria-busy', 'true');
     render(msg, html`<div class="cqa-skel" style="height:6px"></div>`);
     try {
       const n = await loadDataset(groupId);
@@ -293,7 +319,7 @@ export function mount(root, props = {}) {
     } catch (e) {
       render(msg, html`<div class="cqa-error-box" role="alert">${icon('info')}<div class="cqa-stack-y" style="gap:8px"><p>${t('list.loadSetError', { group: groupId })}</p><span class="cqa-small cqa-mono">${e.message}</span>
         <div><button type="button" class="cqa-btn cqa-btn--primary cqa-btn--sm" data-act="retry-load">${t('common.retry')}</button></div></div></div>`);
-    } finally { btn.disabled = false; }
+    } finally { btn.disabled = false; btn.classList.remove('is-loading'); btn.removeAttribute('aria-busy'); }
   }
 
   function openImport() {
@@ -301,7 +327,7 @@ export function mount(root, props = {}) {
     const m = openModal({
       title: t('import.title'), eyebrow: 'POST /conversations/import', size: 'lg',
       body: html`
-        <div class="cqa-seg" role="tablist"><button type="button" class="cqa-seg__btn is-active" data-mode="file">${t('import.file')}</button><button type="button" class="cqa-seg__btn" data-mode="paste">${t('import.paste')}</button></div>
+        <div class="cqa-seg" role="group" aria-label="${t('import.title')}"><button type="button" class="cqa-seg__btn is-active" data-mode="file" aria-pressed="true">${t('import.file')}</button><button type="button" class="cqa-seg__btn" data-mode="paste">${t('import.paste')}</button></div>
         <div data-pane="file"><label class="cqa-dropzone" data-drop>${icon('upload', { size: 28 })}<p style="margin-top:8px"><b>${t('import.drop')}</b></p><p class="cqa-small">${t('import.dropHint')}</p><input type="file" accept=".json,application/json" hidden></label></div>
         <div data-pane="paste" hidden class="cqa-stack-y">
           <div class="cqa-row cqa-row--wrap" style="gap:12px">
@@ -322,7 +348,7 @@ export function mount(root, props = {}) {
           const b = e.target instanceof Element ? e.target.closest('[data-mode]') : null;
           if (!b) return;
           mode = b.getAttribute('data-mode');
-          $$(el, '[data-mode]').forEach((x) => x.classList.toggle('is-active', x === b));
+          $$(el, '[data-mode]').forEach((x) => { x.classList.toggle('is-active', x === b); x.setAttribute('aria-pressed', String(x === b)); });
           $$(el, '[data-pane]').forEach((p) => { p.hidden = p.getAttribute('data-pane') !== mode; });
           el.dataset.mode = mode;
         });
@@ -400,7 +426,8 @@ export function mount(root, props = {}) {
       drawFilters(); refilter();
     }
     const sortBtn = el.closest('[data-sort]');
-    if (sortBtn) { const k = sortBtn.getAttribute('data-sort'); ui.dir = ui.sort === k ? -ui.dir : 1; ui.sort = k; drawTable(); return; }
+    if (sortBtn) { const k = sortBtn.getAttribute('data-sort'); ui.dir = ui.sort === k ? -ui.dir : 1; ui.sort = k; syncUrl(); drawTable(); return; }
+    if (act === 'more') { ui.limit += PAGE; drawTable(); return; }
     const lf = el.closest('[data-lang-f]');
     if (lf) { ui.lang = lf.getAttribute('data-lang-f'); drawFilters(); refilter(); return; }
     if (el.closest('input[type=checkbox], a, button, label')) return;

@@ -17,10 +17,10 @@
 }
 
 /* ── Headlines ─────────────────────────────────────────────────────── */
-/* Big page headlines: thin, wide, expensive (Unbounded 300). Everything else stays on dense Onest. */
+/* Big page headlines: thin, wide, expensive (overridden in motion.css: Onest 760). */
 .cqa-root .cqa-display {
-  font-family: "Unbounded", var(--cqa-font-display); font-weight: 300; font-size: clamp(48px, 6.6vw, 104px);
-  letter-spacing: -.06em; line-height: .92;
+  font-family: "Onest", var(--cqa-font-sans); font-weight: 300; font-size: clamp(48px, 6.6vw, 104px);
+  letter-spacing: -.04em; line-height: .92;
 }
 .cqa-root .cqa-display::after { color: var(--cqa-green); margin-left: .02em; }
 .cqa-root .cqa-h2 { font-family: var(--cqa-font-display); font-weight: 650; font-size: 28px; letter-spacing: -.04em; line-height: 1.1; }
@@ -65,7 +65,7 @@
 
 /* ── Numbers: heavy, tight, tabular ────────────────────────────────── */
 .cqa-root :is(.cqa-score__num, .cqa-kpi__val, .cqa-preview__num, .cqa-batch__count, .cqa-result-swap__new, .cqa-sec__val, .cqa-weight-ring__val, .cqa-crit__pts, .cqa-score-cell) {
-  font-family: var(--cqa-font-display); font-weight: 650; letter-spacing: -.045em;
+  font-family: var(--cqa-font-display); font-weight: 650; letter-spacing: -.04em;
 }
 .cqa-root .cqa-score__num { font-size: 54px; }
 .cqa-root .cqa-kpi__val { font-size: 50px; }

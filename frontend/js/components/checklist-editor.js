@@ -14,6 +14,7 @@ import { openModal, confirmDialog } from './modal.js';
 import { toast, errorToast } from './toast.js';
 import { deltaChip, skeleton, langBadge } from './ui.js';
 import { renderHero, meter } from './hero.js';
+import { pageArt } from './page-art.js';
 
 const DRAFT_KEY = 'draft.checklist';
 const FIELDS = ['sections', 'criteria', 'name'];
@@ -31,10 +32,9 @@ export function mount(root) {
 
   render(root, html`<div class="cqa-page">
     <div class="cqa-page__head"><div class="cqa-page__title">
-      <span class="cqa-eyebrow">${t('checklist.eyebrow')}</span>
       <h1 class="cqa-display">${t('checklist.title')}</h1>
       <p class="cqa-lead">${t('checklist.lead')}</p>
-    </div><span class="cqa-page__index" aria-hidden="true">02</span></div>
+    </div>${pageArt('checklists')}</div>
     <div data-hero></div>
     <div data-bar></div>
     <div class="cqa-editor__grid">
@@ -499,6 +499,7 @@ export function mount(root) {
     const it = e.target instanceof Element ? e.target.closest('.cqa-item') : null;
     if (!it) return;
     drag = { id: it.getAttribute('data-id'), sig: '' };
+    root.classList.add('cqa-dragging'); // no text selection while dragging
     e.dataTransfer.effectAllowed = 'move';
     try { e.dataTransfer.setData('text/plain', drag.id); } catch { /* old browsers */ }
     requestAnimationFrame(() => it.classList.add('is-dragging'));
@@ -534,6 +535,7 @@ export function mount(root) {
   const onDragEnd = () => {
     if (!drag) return;
     drag = null;
+    root.classList.remove('cqa-dragging');
     $$(root, '.cqa-item').forEach((x) => { x.classList.remove('is-dragging'); x.removeAttribute('draggable'); });
     drawAll(); persist();
   };
@@ -549,6 +551,10 @@ export function mount(root) {
   root.addEventListener('drop', onDrop);
 
   if (init()) drawAll();
+
+  /** Unsaved changes: the browser warns on tab close; in-app navigation keeps the draft and says so. */
+  const onBeforeUnload = (e) => { if (draft && dirty()) { e.preventDefault(); e.returnValue = ''; } };
+  window.addEventListener('beforeunload', onBeforeUnload);
   const unsub = store.subscribe((s, p) => {
     if (s.checklists !== p.checklists) {
       if (!draft) { if (init()) drawAll(); return; }
@@ -560,6 +566,8 @@ export function mount(root) {
   return {
     update() {},
     destroy() {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      if (draft && dirty()) toast({ kind: 'info', title: t('checklist.draftKept'), message: t('checklist.draftKeptHint'), timeout: 6000 });
       unsub();
       root.removeEventListener('click', onClick);
       root.removeEventListener('input', onInput);

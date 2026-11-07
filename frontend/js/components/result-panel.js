@@ -2,7 +2,7 @@
  * Evaluation result: score hero (odometer + gauge), sections, "how the total is computed",
  * ledger of criteria with evidence links, appeals and audit log.
  */
-import { html, raw, esc, render, $, $$, fmtScore, fmtDate, parseTimestamp } from '../core/utils.js';
+import { html, raw, esc, render, $, $$, fmtScore, fmtNum, fmtUsd, fmtDate, parseTimestamp } from '../core/utils.js';
 import { icon } from '../core/icons.js';
 import { t, getLang } from '../core/i18n.js';
 import { config } from '../config.js';
@@ -68,8 +68,8 @@ export function mount(root, props) {
             ${overridden ? html`<div class="cqa-score__orig">${t('result.aiOriginal')}: <s class="cqa-num">${fmtScore(scAI.total)}</s> → <b class="cqa-num" style="color:#fff">${fmtScore(sc.total)}</b> ${deltaChip(sc.total != null && scAI.total != null ? round2(sc.total - scAI.total) : null)}</div>` : ''}
             <div class="cqa-score__meta">
               <span>${ev.model}</span><span>${fmtDate(ev.createdAt, getLang())}</span>
-              ${ev.durationMs != null ? html`<span>${(ev.durationMs / 1000).toFixed(1)}s</span>` : ''}
-              ${ev.costUsd != null ? html`<span>$${Number(ev.costUsd).toFixed(4)}</span>` : ''}
+              ${ev.durationMs != null ? html`<span>${fmtNum(ev.durationMs / 1000, 1)} s</span>` : ''}
+              ${ev.costUsd != null ? html`<span>${fmtUsd(Number(ev.costUsd), 4)}</span>` : ''}
             </div>
             ${sc.gross ? grossPlate() : ''}
           </div>

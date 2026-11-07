@@ -14,11 +14,13 @@ import * as Transcript from './transcript-view.js';
 import { answerPill, appealBadge, appealTimeline, emptyState, skeleton, createOdometer, deltaChip, confidenceMeter } from './ui.js';
 import { toast, errorToast } from './toast.js';
 import { renderHero, meter } from './hero.js';
+import { pageArt } from './page-art.js';
 import { config } from '../config.js';
+import { setLead } from '../core/fx.js';
 
 /** @param {HTMLElement} root @param {{id?:string|null}} props */
 export function mount(root, props) {
-  let filter = 'open';
+  let filter = ['open', 'done', 'all'].includes(props.f) ? props.f : 'open';
   let selected = props.id || null;
   let detailToken = 0;
   let fragment = null;
@@ -26,17 +28,25 @@ export function mount(root, props) {
 
   render(root, html`<div class="cqa-page">
     <div class="cqa-page__head"><div class="cqa-page__title">
-      <span class="cqa-eyebrow">${t('appeals.eyebrow')}</span>
       <h1 class="cqa-display">${t('appeals.title')}</h1>
       <p class="cqa-lead" data-lead></p>
     </div>
-    <div class="cqa-seg" role="group" aria-label="${t('appeals.filter')}" data-filter></div>
-    <span class="cqa-page__index" aria-hidden="true">03</span></div>
+    ${pageArt('appeals')}</div>
     <div data-hero></div>
+    <div class="cqa-row" style="margin-bottom:20px"><div class="cqa-seg" role="group" aria-label="${t('appeals.filter')}" data-filter></div></div>
     <div class="cqa-queue"><div class="cqa-queue__list" data-list></div><div class="cqa-queue__detail" data-detail aria-live="polite"></div></div>
   </div>`);
   const $list = $(root, '[data-list]');
   const $detail = $(root, '[data-detail]');
+
+  /** Selected appeal and filter are mirrored in the URL. */
+  function syncUrl() {
+    const q = new URLSearchParams();
+    if (selected) q.set('id', selected);
+    if (filter !== 'open') q.set('f', filter);
+    const qs = q.toString();
+    history.replaceState(history.state, '', `#/appeals${qs ? '?' + qs : ''}`);
+  }
 
   const isOpen = (a) => a.status === 'submitted' || a.status === 'in_review';
   const visible = () => store.get().appeals.filter((a) => (filter === 'open' ? isOpen(a) : filter === 'done' ? !isOpen(a) : true));
@@ -49,7 +59,7 @@ export function mount(root, props) {
   function drawHead() {
     const s = store.get();
     const open = s.appeals.filter(isOpen).length;
-    $(root, '[data-lead]').textContent = s.role === 'reviewer' ? t('appeals.leadReviewer', { n: open }) : t('appeals.leadQa');
+    setLead($(root, '[data-lead]'), s.role === 'reviewer' ? t('appeals.leadReviewer', { n: open }) : t('appeals.leadQa'));
     const decided = s.appeals.filter((a) => !isOpen(a));
     const changed = decided.filter((a) => a.status === 'changed').length;
     renderHero(/** @type {HTMLElement} */ ($(root, '[data-hero]')), [
@@ -119,7 +129,7 @@ export function mount(root, props) {
     render($detail, html`
       <div class="cqa-card cqa-stack-y" style="gap:14px">
         <div class="cqa-row cqa-row--between cqa-row--wrap">
-          <div class="cqa-stack-y" style="gap:4px"><span class="cqa-eyebrow">${t('appeals.disputed')} · ${cl.name} v${cl.version}</span><h2 class="cqa-h2" style="font-size:26px">${c.title}</h2></div>
+          <div class="cqa-stack-y" style="gap:4px"><h2 class="cqa-h2" style="font-size:26px">${c.title}</h2><span class="cqa-small cqa-muted">${t('appeals.disputed')} · ${cl.name} v${cl.version}</span></div>
           <a class="cqa-btn cqa-btn--secondary cqa-btn--sm" href="${convLink(conv.conversation_id, firstEv)}">${icon('external', { size: 16 })}${conv.conversation_id}</a>
         </div>
         ${appealTimeline(ap)}
@@ -236,24 +246,26 @@ export function mount(root, props) {
     }
     const btn = /** @type {HTMLButtonElement} */ ($(form, 'button[type=submit]'));
     btn.disabled = true;
+    btn.classList.add('is-loading');
+    btn.setAttribute('aria-busy', 'true');
     try {
       const res = await decideAppeal(selected, { action, newValue, reason });
       justDecided = { id: selected, before: res.appeal.decision?.totalBefore ?? null, after: res.evaluation.total };
       toast({ kind: 'approved', title: action === 'change' ? t('appeals.changedToast') : t('appeals.confirmedToast'), message: `${res.evaluation.conversationId} · ${fmtScore(justDecided.before)} → ${fmtScore(justDecided.after)}` });
       drawList();
       drawDetail();
-    } catch (e) { errorToast(e, t('appeals.decisionError')); btn.disabled = false; }
+    } catch (e) { errorToast(e, t('appeals.decisionError')); btn.disabled = false; btn.classList.remove('is-loading'); btn.removeAttribute('aria-busy'); }
   }
 
   const onClick = (e) => {
     const el = e.target instanceof Element ? e.target : null;
     const f = el?.closest('[data-f]');
-    if (f) { filter = f.getAttribute('data-f'); drawHead(); drawList(); return; }
+    if (f) { filter = f.getAttribute('data-f'); syncUrl(); drawHead(); drawList(); return; }
     const it = el?.closest('.cqa-queue__item');
     if (it) {
       selected = it.getAttribute('data-id');
       justDecided = null;
-      history.replaceState(null, '', `#/appeals?id=${selected}`);
+      syncUrl();
       $$(root, '.cqa-queue__item').forEach((b) => { b.classList.toggle('is-selected', b === it); b.setAttribute('aria-pressed', String(b === it)); });
       drawDetail();
       return;
@@ -267,12 +279,19 @@ export function mount(root, props) {
       if (nv) nv.hidden = el.value !== 'change';
     }
   };
+  const onFormKey = (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target instanceof HTMLTextAreaElement) {
+      const form = e.target.closest('form[data-decision]');
+      if (form) { e.preventDefault(); /** @type {HTMLFormElement} */ (form).requestSubmit(); }
+    }
+  };
   const onSubmit = (e) => {
     if (e.target instanceof HTMLFormElement && e.target.hasAttribute('data-decision')) { e.preventDefault(); submitDecision(e.target); }
   };
   root.addEventListener('click', onClick);
   root.addEventListener('change', onChange);
   root.addEventListener('submit', onSubmit);
+  root.addEventListener('keydown', onFormKey);
 
   if (!selected) selected = visible()[0]?.id || null;
   drawHead(); drawList(); drawDetail();
@@ -293,6 +312,7 @@ export function mount(root, props) {
       root.removeEventListener('click', onClick);
       root.removeEventListener('change', onChange);
       root.removeEventListener('submit', onSubmit);
+      root.removeEventListener('keydown', onFormKey);
       root.innerHTML = '';
     },
   };

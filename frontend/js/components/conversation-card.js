@@ -2,7 +2,7 @@
  * Conversation card (main screen): transcript (+ call player) on the left, result on the right.
  * Deep link: #/conversation/{id}?msg={index}
  */
-import { html, render, $, $$, isVoice, downloadFile, fmtScore, transcriptOffsets } from '../core/utils.js';
+import { html, render, $, $$, isVoice, downloadFile, fmtScore, fmtNum, fmtUsd, transcriptOffsets } from '../core/utils.js';
 import { icon } from '../core/icons.js';
 import { t } from '../core/i18n.js';
 import { api } from '../api/client.js';
@@ -30,7 +30,8 @@ const STAGES = ['fetch', 'checklist', 'analyze', 'score', 'signed'];
 export function mount(root, props) {
   let conv = null;
   let evaluation = null;
-  let tab = 'result';
+  const TABS = ['result', 'trace', 'compare'];
+  let tab = TABS.includes(props.tab) ? props.tab : 'result';
   let pane = 'result';
   let processing = null; // {stage, startedAt}
   let justEvaluated = false;
@@ -84,7 +85,7 @@ export function mount(root, props) {
     render(root, html`<div class="cqa-cardpage">
       <div class="cqa-cardpage__bar">
         ${props.embedded ? '' : html`<a class="cqa-btn cqa-btn--secondary cqa-btn--sm" href="#/conversations">${icon('left', { size: 16 })}${t('nav.conversations')}</a>`}
-        <span class="cqa-cardpage__id">${conv.conversation_id}</span>
+        <span class="cqa-cardpage__id" translate="no">${conv.conversation_id}</span>
         ${langBadge(conv.language)} ${channelBadge(conv)}
         ${conv.dataset ? html`<span class="cqa-badge cqa-badge--mono cqa-badge--sm">${conv.dataset}</span>` : ''}
         <span class="cqa-grow"></span>
@@ -108,9 +109,9 @@ export function mount(root, props) {
           <button type="button" class="cqa-btn cqa-btn--line cqa-btn--icon cqa-btn--sm" data-act="keys" title="${t('keys.title')} (?)" aria-label="${t('keys.title')}">${icon('keyboard', { size: 16 })}</button>
         </div>
       </div>
-      <div class="cqa-seg cqa-mobile-tabs" role="tablist" style="margin-bottom:16px">
-        <button type="button" class="cqa-seg__btn ${pane === 'transcript' ? 'is-active' : ''}" data-pane-btn="transcript">${t('card.transcript')}</button>
-        <button type="button" class="cqa-seg__btn ${pane === 'result' ? 'is-active' : ''}" data-pane-btn="result">${t('card.result')}</button>
+      <div class="cqa-seg cqa-mobile-tabs" role="group" aria-label="${t('card.result')} / ${t('card.transcript')}" style="margin-bottom:16px">
+        <button type="button" class="cqa-seg__btn ${pane === 'transcript' ? 'is-active' : ''}" data-pane-btn="transcript" aria-pressed="${pane === 'transcript'}">${t('card.transcript')}</button>
+        <button type="button" class="cqa-seg__btn ${pane === 'result' ? 'is-active' : ''}" data-pane-btn="result" aria-pressed="${pane === 'result'}">${t('card.result')}</button>
       </div>
       <div class="cqa-cardpage__grid">
         <div class="cqa-cardpage__col ${pane === 'transcript' ? 'is-shown' : ''}" data-pane="transcript">
@@ -122,10 +123,10 @@ export function mount(root, props) {
           </div>
         </div>
         <div class="cqa-cardpage__col ${pane === 'result' ? 'is-shown' : ''}" data-pane="result">
-          <div class="cqa-tabs cqa-no-print" role="tablist">
-            ${['result', 'trace', 'compare'].map((k) => html`<button type="button" role="tab" class="cqa-tab ${tab === k ? 'is-active' : ''}" aria-selected="${tab === k}" data-tab="${k}">${t('card.tab.' + k)}</button>`)}
+          <div class="cqa-tabs cqa-no-print" role="tablist" aria-label="${t('card.result')}">
+            ${TABS.map((k) => html`<button type="button" role="tab" id="cqa-tab-${k}" class="cqa-tab ${tab === k ? 'is-active' : ''}" aria-selected="${tab === k}" aria-controls="cqa-tabpanel" tabindex="${tab === k ? 0 : -1}" data-tab="${k}">${t('card.tab.' + k)}</button>`)}
           </div>
-          <div data-tabpanel aria-live="polite"></div>
+          <div data-tabpanel id="cqa-tabpanel" role="tabpanel" aria-labelledby="cqa-tab-${tab}" aria-live="polite"></div>
         </div>
       </div>
     </div>`);
@@ -240,7 +241,7 @@ export function mount(root, props) {
           return html`<div class="cqa-compare__row ${diff ? 'cqa-compare__row--diff' : ''}">
             <span>${(c2 || c1).title}${!c1 ? html` <span class="cqa-badge cqa-badge--green cqa-badge--sm">${t('diff.added')}</span>` : !c2 ? html` <span class="cqa-badge cqa-badge--red cqa-badge--sm">${t('diff.removed')}</span>` : ''}</span>
             <span>${c1 ? answerPill(c1, r1?.answer) : '—'}</span><span>${c2 ? answerPill(c2, r2?.answer) : '—'}</span>
-            <span class="cqa-num cqa-mono" style="text-align:right">${Math.abs(d) < 0.005 ? '0.00' : (d > 0 ? '+' : '−') + Math.abs(d).toFixed(2)}</span></div>`;
+            <span class="cqa-num cqa-mono" style="text-align:right">${Math.abs(d) < 0.005 ? fmtNum(0, 2) : (d > 0 ? '+' : '−') + fmtNum(Math.abs(d), 2)}</span></div>`;
         })}
       </div>`);
       $$(wrap, '[data-cmp]').forEach((sel) => sel.addEventListener('change', () => {
@@ -255,7 +256,11 @@ export function mount(root, props) {
   function showPane(p) {
     pane = p;
     $$(root, '[data-pane]').forEach((el) => el.classList.toggle('is-shown', el.getAttribute('data-pane') === p));
-    $$(root, '[data-pane-btn]').forEach((el) => el.classList.toggle('is-active', el.getAttribute('data-pane-btn') === p));
+    $$(root, '[data-pane-btn]').forEach((el) => {
+      const on = el.getAttribute('data-pane-btn') === p;
+      el.classList.toggle('is-active', on);
+      el.setAttribute('aria-pressed', String(on));
+    });
   }
 
   function focusEvidence(i, quote) {
@@ -326,7 +331,7 @@ export function mount(root, props) {
     if (act === 'print') window.print();
     if (act === 'keys') showKeys();
     const tb = el?.closest('[data-tab]');
-    if (tb) { tab = tb.getAttribute('data-tab'); $$(root, '[data-tab]').forEach((b) => { b.classList.toggle('is-active', b === tb); b.setAttribute('aria-selected', String(b === tb)); }); drawTab(); }
+    if (tb) selectTab(tb.getAttribute('data-tab'));
     const pb = el?.closest('[data-pane-btn]');
     if (pb) showPane(pb.getAttribute('data-pane-btn'));
   };
@@ -335,6 +340,40 @@ export function mount(root, props) {
     if (el?.dataset.field === 'checklist') store.set({ checklistId: el.value });
     if (el?.dataset.field === 'model') store.set({ model: el.value });
   };
+  /** WAI-ARIA tabs: roving tabindex, the active tab is in the URL (?tab=trace). */
+  function selectTab(k, focus = false) {
+    if (!TABS.includes(k)) return;
+    tab = k;
+    $$(root, '[data-tab]').forEach((b) => {
+      const on = b.getAttribute('data-tab') === k;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-selected', String(on));
+      b.setAttribute('tabindex', on ? '0' : '-1');
+      if (on && focus) b.focus();
+    });
+    $(root, '[data-tabpanel]')?.setAttribute('aria-labelledby', `cqa-tab-${k}`);
+    if (!props.embedded) {
+      const q = new URLSearchParams(location.hash.split('?')[1] || '');
+      if (k === 'result') q.delete('tab'); else q.set('tab', k);
+      q.delete('msg');
+      const qs = q.toString();
+      history.replaceState(history.state, '', `#/conversation/${encodeURIComponent(conv.conversation_id)}${qs ? '?' + qs : ''}`);
+    }
+    drawTab();
+  }
+
+  const onTabKey = (e) => {
+    const tb = e.target instanceof Element ? e.target.closest('[role="tab"]') : null;
+    if (!tb) return;
+    const i = TABS.indexOf(tb.getAttribute('data-tab'));
+    const next = e.key === 'ArrowRight' ? (i + 1) % TABS.length : e.key === 'ArrowLeft' ? (i + TABS.length - 1) % TABS.length
+      : e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    selectTab(TABS[next], true);
+  };
+
   const onKey = (e) => {
     if (!conv || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
     const tgt = e.target instanceof Element ? e.target : null;
@@ -352,6 +391,7 @@ export function mount(root, props) {
   };
   root.addEventListener('click', onClick);
   root.addEventListener('change', onChange);
+  root.addEventListener('keydown', onTabKey);
   document.addEventListener('keydown', onKey);
 
   unsubs.push(store.subscribe((s, p) => {
@@ -388,7 +428,7 @@ export function mount(root, props) {
       tab = 'result';
       transcript?.stopScan();
       drawShell();
-      toast({ kind: 'approved', title: t('proc.doneToast'), message: `${fmtScore(evaluation.total)} · ${(evaluation.durationMs / 1000).toFixed(1)}s · $${Number(evaluation.costUsd ?? 0).toFixed(3)}` });
+      toast({ kind: 'approved', title: t('proc.doneToast'), message: `${fmtScore(evaluation.total)} · ${fmtNum(evaluation.durationMs / 1000, 1)} s · ${fmtUsd(Number(evaluation.costUsd ?? 0), 3)}` });
     } catch (e) { errorToast(e); }
   }));
   unsubs.push(bus.on('evaluation:failed', (it) => {
@@ -427,6 +467,7 @@ export function mount(root, props) {
       document.removeEventListener('keydown', onKey);
       root.removeEventListener('click', onClick);
       root.removeEventListener('change', onChange);
+      root.removeEventListener('keydown', onTabKey);
       transcript?.destroy(); player?.destroy(); panel?.destroy();
       root.innerHTML = '';
     },

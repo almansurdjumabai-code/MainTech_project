@@ -1,5 +1,5 @@
 /** Evaluation trace: proof that the evaluation ran live (model, version, timing, tokens, raw output). */
-import { html, render, raw, esc, fmtDate, downloadFile } from '../core/utils.js';
+import { html, render, raw, esc, fmtDate, downloadFile, fmtNum, fmtUsd } from '../core/utils.js';
 import { icon } from '../core/icons.js';
 import { t, getLang } from '../core/i18n.js';
 
@@ -26,9 +26,9 @@ export function mount(root, props) {
       [t('trace.model'), ev.model],
       [t('trace.checklist'), `${props.checklist?.name || ''} · v${props.checklist?.version ?? ev.checklistVersion ?? '?'}`],
       [t('trace.started'), fmtDate(ev.createdAt, getLang())],
-      [t('trace.duration'), ev.durationMs != null ? `${(ev.durationMs / 1000).toFixed(2)} s` : '—'],
+      [t('trace.duration'), ev.durationMs != null ? `${fmtNum(ev.durationMs / 1000, 2)} s` : '—'],
       [t('trace.tokens'), ev.tokens ? `${ev.tokens.in} in · ${ev.tokens.out} out` : '—'],
-      [t('trace.cost'), ev.costUsd != null ? `$${Number(ev.costUsd).toFixed(4)}` : '—'],
+      [t('trace.cost'), ev.costUsd != null ? fmtUsd(Number(ev.costUsd), 4) : '—'],
       [t('trace.criteria'), String(ev.criteria?.length ?? 0)],
     ];
     render(root, html`<div class="cqa-trace">

@@ -1,0 +1,111 @@
+/* ═══════════════ TAB TRANSITIONS — calm, modern, quick ═══════════════
+   Loaded after atmos.css; overrides the older "sheet"/"shutter" rules in luxe/motion/cinema (more specific selectors).
+   One idea everywhere (shared axis): the old page fades out with a small shift, the new one fades in from
+   a small offset on the same axis. Short (≈200 ms out, ≈420 ms in), soft easing, no flashes, no 3D, no wipes.
+   Each destination has its own axis so the tabs still feel different:
+     Dialogs — horizontal, in the direction of travel (html[data-vt-dir]);
+     Checklists — a soft scale-in from 97 %;
+     Appeals — comes into focus: a light blur clears while it slides a little;
+     Dashboard — vertical, the page settles up from below;
+     Conversation card — gentle zoom, like a row opening up.
+   The header and ticker never move; the white tab pill glides on its own spring. */
+
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    --vt-out: cubic-bezier(.4, 0, 1, 1);      /* accelerate away */
+    --vt-in-ease: cubic-bezier(.2, 0, 0, 1);  /* emphasized decelerate */
+    --vt-shift: 28px;
+  }
+
+  /* names: the headline and the glass figures travel as their own layers */
+  .cqa-root .cqa-page__title .cqa-display { view-transition-name: cqa-title; }
+  .cqa-root .cqa-hero__cell:nth-child(1), .cqa-root .cqa-kpis > .cqa-kpi:nth-child(1) { view-transition-name: cqa-fig-1; }
+  .cqa-root .cqa-hero__cell:nth-child(2), .cqa-root .cqa-kpis > .cqa-kpi:nth-child(2) { view-transition-name: cqa-fig-2; }
+  .cqa-root .cqa-hero__cell:nth-child(3), .cqa-root .cqa-kpis > .cqa-kpi:nth-child(3) { view-transition-name: cqa-fig-3; }
+  .cqa-root .cqa-hero__cell:nth-child(4), .cqa-root .cqa-kpis > .cqa-kpi:nth-child(4) { view-transition-name: cqa-fig-4; }
+  .cqa-root .cqa-hero__cell:nth-child(5), .cqa-root .cqa-kpis > .cqa-kpi:nth-child(5) { view-transition-name: cqa-fig-5; }
+
+  /* header + ticker: no crossfade at all; the live new header shows the pill gliding */
+  html:root[data-vt-dir]::view-transition-group(cqa-header),
+  html:root[data-vt-dir]::view-transition-group(cqa-ticker) { animation: none; }
+  html:root[data-vt-dir]::view-transition-old(cqa-header),
+  html:root[data-vt-dir]::view-transition-old(cqa-ticker) { display: none; }
+  html:root[data-vt-dir]::view-transition-new(cqa-header),
+  html:root[data-vt-dir]::view-transition-new(cqa-ticker) { animation: none; }
+
+  /* ── page body: horizontal shared axis (default for tabs) ── */
+  html:root[data-vt-dir]::view-transition-old(root) {
+    animation: cqa-vt-out-x 200ms var(--vt-out) both; box-shadow: none; filter: none;
+  }
+  html:root[data-vt-dir]::view-transition-new(root) {
+    animation: cqa-vt-in-x 420ms var(--vt-in-ease) 80ms both; box-shadow: none; clip-path: none;
+  }
+  html:root[data-vt-dir="back"]::view-transition-old(root) { animation-name: cqa-vt-out-x-back; }
+  html:root[data-vt-dir="back"]::view-transition-new(root) { animation-name: cqa-vt-in-x-back; }
+  @keyframes cqa-vt-out-x { to { opacity: 0; transform: translateX(calc(var(--vt-shift) * -1)); } }
+  @keyframes cqa-vt-out-x-back { to { opacity: 0; transform: translateX(var(--vt-shift)); } }
+  @keyframes cqa-vt-in-x { from { opacity: 0; transform: translateX(var(--vt-shift)); } }
+  @keyframes cqa-vt-in-x-back { from { opacity: 0; transform: translateX(calc(var(--vt-shift) * -1)); } }
+
+  /* ── Dashboard: vertical axis — settles up from below ── */
+  html:root[data-vt-dir][data-vt-to="dashboard"]::view-transition-old(root) { animation-name: cqa-vt-out-y; }
+  html:root[data-vt-dir][data-vt-to="dashboard"]::view-transition-new(root) { animation-name: cqa-vt-in-y; }
+  @keyframes cqa-vt-out-y { to { opacity: 0; transform: translateY(-12px); } }
+  @keyframes cqa-vt-in-y { from { opacity: 0; transform: translateY(var(--vt-shift)); } }
+
+  /* ── Checklists: a soft scale-in — the page grows from 97 % to full size ── */
+  html:root[data-vt-dir][data-vt-to="checklists"]::view-transition-old(root) { animation-name: cqa-vt-out-s; transform-origin: 50% 20%; }
+  html:root[data-vt-dir][data-vt-to="checklists"]::view-transition-new(root) { animation-name: cqa-vt-in-s; transform-origin: 50% 20%; }
+  @keyframes cqa-vt-out-s { to { opacity: 0; transform: scale(1.01); } }
+  @keyframes cqa-vt-in-s { from { opacity: 0; transform: scale(.97); } }
+
+  /* ── Appeals: comes into focus — a light blur clears while it slides a little ── */
+  html:root[data-vt-dir][data-vt-to="appeals"]::view-transition-old(root) { animation-name: cqa-vt-out-blur; }
+  html:root[data-vt-dir][data-vt-to="appeals"]::view-transition-new(root) { animation-name: cqa-vt-in-blur; animation-duration: 460ms; }
+  html:root[data-vt-dir="back"][data-vt-to="appeals"]::view-transition-new(root) { animation-name: cqa-vt-in-blur-back; }
+  @keyframes cqa-vt-out-blur { to { opacity: 0; filter: blur(6px); } }
+  @keyframes cqa-vt-in-blur { from { opacity: 0; filter: blur(8px); transform: translateX(16px); } }
+  @keyframes cqa-vt-in-blur-back { from { opacity: 0; filter: blur(8px); transform: translateX(-16px); } }
+
+  /* ── Conversation card: gentle zoom, like a row opening ── */
+  html:root[data-vt-dir][data-vt-to="conversation"]::view-transition-old(root) { animation-name: cqa-vt-out-z; transform-origin: 50% 30%; }
+  html:root[data-vt-dir][data-vt-to="conversation"]::view-transition-new(root) { animation-name: cqa-vt-in-z; transform-origin: 50% 30%; }
+  @keyframes cqa-vt-out-z { to { opacity: 0; transform: scale(.985); } }
+  @keyframes cqa-vt-in-z { from { opacity: 0; transform: scale(1.015); } }
+
+  /* ── headline: a soft crossfade in place (the new word still rises in by its letters) ── */
+  html:root[data-vt-dir]::view-transition-group(cqa-title) { animation-duration: 420ms; animation-timing-function: var(--vt-in-ease); }
+  html:root[data-vt-dir]::view-transition-old(cqa-title) { animation: cqa-vt-fade-out 180ms var(--vt-out) both; }
+  html:root[data-vt-dir]::view-transition-new(cqa-title) { animation: cqa-vt-fade-in 300ms var(--vt-in-ease) 80ms both; }
+  @keyframes cqa-vt-fade-out { to { opacity: 0; } }
+  @keyframes cqa-vt-fade-in { from { opacity: 0; } }
+
+  /* ── glass figures: panels glide to their new size and place; contents crossfade ── */
+  html:root[data-vt-dir]::view-transition-group(cqa-fig-1),
+  html:root[data-vt-dir]::view-transition-group(cqa-fig-2),
+  html:root[data-vt-dir]::view-transition-group(cqa-fig-3),
+  html:root[data-vt-dir]::view-transition-group(cqa-fig-4),
+  html:root[data-vt-dir]::view-transition-group(cqa-fig-5) { animation-duration: 460ms; animation-timing-function: var(--vt-in-ease); }
+  html:root[data-vt-dir]::view-transition-group(cqa-fig-2) { animation-delay: 20ms; }
+  html:root[data-vt-dir]::view-transition-group(cqa-fig-3) { animation-delay: 40ms; }
+  html:root[data-vt-dir]::view-transition-group(cqa-fig-4) { animation-delay: 60ms; }
+  html:root[data-vt-dir]::view-transition-group(cqa-fig-5) { animation-delay: 80ms; }
+  html:root[data-vt-dir]::view-transition-old(cqa-fig-1), html:root[data-vt-dir]::view-transition-old(cqa-fig-2),
+  html:root[data-vt-dir]::view-transition-old(cqa-fig-3), html:root[data-vt-dir]::view-transition-old(cqa-fig-4),
+  html:root[data-vt-dir]::view-transition-old(cqa-fig-5) { animation: cqa-vt-fade-out 160ms var(--vt-out) both; height: 100%; object-fit: cover; }
+  html:root[data-vt-dir]::view-transition-new(cqa-fig-1), html:root[data-vt-dir]::view-transition-new(cqa-fig-2),
+  html:root[data-vt-dir]::view-transition-new(cqa-fig-3), html:root[data-vt-dir]::view-transition-new(cqa-fig-4),
+  html:root[data-vt-dir]::view-transition-new(cqa-fig-5) { animation: cqa-vt-fade-in 320ms var(--vt-in-ease) 100ms both; height: 100%; object-fit: cover; }
+}
+
+/* The new page's own content entrance: shorter and calmer than the old 1 s rise with 30 px travel,
+   so it reads as one smooth motion with the transition above. */
+@media (prefers-reduced-motion: no-preference) {
+  .cqa-root .cqa-page-enter > .cqa-page > *:not(.cqa-page__head),
+  .cqa-root .cqa-page-enter > .cqa-cardpage > * { animation: cqa-enter-soft 520ms var(--vt-in-ease, ease-out) both; }
+  .cqa-root .cqa-page-enter > .cqa-page > *:nth-child(2) { animation-delay: 60ms; }
+  .cqa-root .cqa-page-enter > .cqa-page > *:nth-child(3) { animation-delay: 110ms; }
+  .cqa-root .cqa-page-enter > .cqa-page > *:nth-child(4) { animation-delay: 150ms; }
+  .cqa-root .cqa-page-enter > .cqa-page > *:nth-child(n+5) { animation-delay: 180ms; }
+  @keyframes cqa-enter-soft { from { opacity: 0; transform: translateY(10px); } }
+}

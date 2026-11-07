@@ -25,11 +25,11 @@ export function openModal({ title, eyebrow, body, footer, size = 'md', onMount, 
   backdrop.className = 'cqa-modal-backdrop';
   const titleId = 'cqa-modal-' + Math.random().toString(36).slice(2, 8);
   render(backdrop, html`
-    <div class="cqa-modal ${size === 'lg' ? 'cqa-modal--lg' : ''}" role="dialog" aria-modal="true" aria-labelledby="${titleId}">
+    <div class="cqa-modal ${size === 'lg' ? 'cqa-modal--lg' : ''}" role="dialog" aria-modal="true" aria-labelledby="${titleId}" tabindex="-1">
       <div class="cqa-modal__head">
         <div class="cqa-stack-y" style="gap:6px">
-          ${eyebrow ? html`<span class="cqa-eyebrow">${eyebrow}</span>` : ''}
           <h2 class="cqa-h3" id="${titleId}" style="font-size:22px;font-weight:500">${title}</h2>
+          ${eyebrow ? html`<span class="cqa-modal__meta">${eyebrow}</span>` : ''}
         </div>
         <button type="button" class="cqa-btn cqa-btn--secondary cqa-btn--icon cqa-btn--sm" data-close="" aria-label="${t('common.close')}">${icon('x')}</button>
       </div>
@@ -54,6 +54,11 @@ export function openModal({ title, eyebrow, body, footer, size = 'md', onMount, 
   const focusables = () => $$(el, 'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])');
   function onKey(e) {
     if (e.key === 'Escape') { e.stopPropagation(); close(null); }
+    // Ctrl/⌘+Enter in a textarea submits the dialog
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target instanceof HTMLTextAreaElement && el.contains(e.target)) {
+      const sub = /** @type {HTMLElement|null} */ (el.querySelector('[data-submit]:not([disabled])'));
+      if (sub) { e.preventDefault(); sub.click(); }
+    }
     if (e.key === 'Tab') {
       const f = focusables();
       if (!f.length) return;
@@ -71,14 +76,18 @@ export function openModal({ title, eyebrow, body, footer, size = 'md', onMount, 
     const s = target?.closest('[data-submit]');
     if (s && onSubmit) {
       s.setAttribute('disabled', '');
+      s.classList.add('is-loading');
+      s.setAttribute('aria-busy', 'true');
       try {
         const v = await onSubmit(el);
         if (v !== undefined) close(v);
-      } finally { s.removeAttribute('disabled'); }
+      } finally { s.removeAttribute('disabled'); s.classList.remove('is-loading'); s.removeAttribute('aria-busy'); }
     }
   });
   onMount?.(el, close);
   requestAnimationFrame(() => {
+    // Autofocus a field only with a fine pointer; on touch it would pop the keyboard — focus the dialog instead.
+    if (!window.matchMedia('(pointer: fine)').matches) { el.focus(); return; }
     const auto = el.querySelector('[autofocus]') || el.querySelector('input, textarea, select') || el.querySelector('[data-submit]') || focusables()[0];
     /** @type {HTMLElement} */ (auto)?.focus();
   });

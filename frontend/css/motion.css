@@ -1,0 +1,102 @@
+/* ═══════════════ MOTION — heavy headlines, page art, directional page transitions, softer entrances ═══════════════
+   Loaded last. Scoped under .cqa-root (view-transition pseudo-elements are document-level by spec). */
+
+/* ── Headlines: heavy, tight, big (Onest 900; Wise Sans is proprietary) ── */
+.cqa-root .cqa-display {
+  font-family: "Onest", var(--cqa-font-sans); font-weight: 900; font-size: clamp(64px, 9.2vw, 150px);
+  letter-spacing: -.04em; line-height: .84; text-wrap: balance; font-feature-settings: "kern", "calt";
+}
+.cqa-root .cqa-display::after { margin-left: .01em; }
+.cqa-root .cqa-split .cqa-w { padding: .08em .03em .14em; margin: -.08em -.03em -.14em; }
+.cqa-root .cqa-split .cqa-ch { transform: translateY(105%) skewY(6deg); animation-duration: 1100ms; animation-delay: calc(var(--i) * 26ms + 80ms); }
+.cqa-root .cqa-page__title { gap: 22px; min-width: 0; }
+.cqa-root .cqa-page__head { flex-wrap: nowrap; align-items: center; min-height: 260px; margin-bottom: 36px; }
+
+/* ── Page illustrations ─────────────────────────────────────────────── */
+.cqa-root .cqa-page__art {
+  flex: none; width: clamp(260px, 27vw, 400px); height: auto; margin-left: auto; overflow: visible;
+  animation: cqa-art-in 1300ms var(--cqa-expo) 260ms both;
+}
+.cqa-root .cqa-art__float { animation: cqa-art-float 8s ease-in-out 1.6s infinite; transform-box: fill-box; }
+.cqa-root .cqa-art .a-surface { fill: var(--cqa-surface); stroke: var(--cqa-line-strong); stroke-width: 1; filter: drop-shadow(0 18px 30px rgba(7, 40, 22, .12)); }
+.cqa-root .cqa-art .a-line { fill: var(--cqa-mist-2); }
+.cqa-root .cqa-art .a-deep { fill: var(--cqa-green-deep); filter: drop-shadow(0 16px 26px rgba(15, 84, 49, .28)); }
+.cqa-root .cqa-art .a-ink { fill: #04100A; }
+.cqa-root .cqa-art .a-lime { fill: var(--cqa-lime); }
+.cqa-root .cqa-art .a-white { fill: #fff; opacity: .9; }
+.cqa-root .cqa-art .a-wave { fill: var(--cqa-green); transform-box: fill-box; transform-origin: center; animation: cqa-wave 1.6s ease-in-out infinite; animation-delay: calc(var(--k) * 90ms); }
+.cqa-root .cqa-art .a-ring-track { fill: none; stroke: rgba(255, 255, 255, .12); stroke-width: 7; }
+.cqa-root .cqa-art .a-ring { fill: none; stroke: var(--cqa-lime); stroke-width: 7; stroke-linecap: round; stroke-dasharray: var(--len) 100; stroke-dashoffset: var(--len); animation: cqa-ring-draw 1500ms var(--cqa-expo) 900ms forwards; }
+.cqa-root .cqa-art .a-num { fill: #fff; font: 800 21px var(--cqa-font-num); letter-spacing: -.04em; }
+.cqa-root .cqa-art .a-check { fill: var(--cqa-lime); transform-box: fill-box; transform-origin: center; animation: cqa-pop-in-svg 600ms var(--cqa-spring) both; animation-delay: calc(var(--k) * 180ms + 900ms); }
+.cqa-root .cqa-art .a-checkmark { fill: none; stroke: #04100A; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.cqa-root .cqa-art .a-box { fill: none; stroke: var(--cqa-line-strong); stroke-width: 2; }
+.cqa-root .cqa-art .a-no { fill: var(--cqa-red-soft); }
+.cqa-root .cqa-art .a-mint { fill: var(--cqa-mint); }
+.cqa-root .cqa-art .a-delta { fill: var(--cqa-green-text); font: 800 15px var(--cqa-font-num); }
+.cqa-root .cqa-art .a-arrow { fill: none; stroke: var(--cqa-green); stroke-width: 2; stroke-dasharray: 5 6; animation: cqa-dash-flow 1.2s linear infinite; }
+.cqa-root .cqa-art .a-arrow-head { fill: none; stroke: var(--cqa-green); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cqa-root .cqa-art .a-scale { fill: none; stroke: var(--cqa-lime); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.cqa-root[data-theme="dark"] .cqa-art .a-surface { filter: none; }
+
+/* ── Softer, deeper entrance (fallback + in-page sections) ───────────── */
+@keyframes cqa-rise {
+  from { opacity: 0; transform: translateY(30px) scale(.985); }
+
+  to { opacity: 1; transform: none; }
+}
+.cqa-root .cqa-page-enter > .cqa-page > *:not(.cqa-page__head),
+.cqa-root .cqa-page-enter > .cqa-cardpage > * { animation: cqa-rise 1000ms var(--cqa-expo) both; }
+.cqa-root .cqa-page-enter > .cqa-page > *:nth-child(2) { animation-delay: 140ms; }
+.cqa-root .cqa-page-enter > .cqa-page > *:nth-child(3) { animation-delay: 220ms; }
+.cqa-root .cqa-page-enter > .cqa-page > *:nth-child(4) { animation-delay: 300ms; }
+.cqa-root .cqa-page-enter > .cqa-page > *:nth-child(5) { animation-delay: 370ms; }
+.cqa-root .cqa-page-enter > .cqa-page > *:nth-child(n+6) { animation-delay: 430ms; }
+.cqa-root .cqa-page-enter .cqa-page__title .cqa-lead { animation: cqa-rise 1000ms var(--cqa-expo) 420ms both; }
+
+/* ── Directional page transition (View Transitions API) ──────────────
+   The new page slides in over the old one as a rounded "sheet" (clip-path wipe);
+   the old page recedes: shrinks, dims, blurs. Direction follows tab order. */
+.cqa-root .cqa-ticker { view-transition-name: cqa-ticker; }
+::view-transition-group(cqa-ticker) { animation: none; }
+::view-transition-old(root), ::view-transition-new(root) {
+  animation-duration: 760ms; animation-timing-function: cubic-bezier(.76, 0, .2, 1); animation-fill-mode: both; mix-blend-mode: normal;
+}
+::view-transition-old(root) { animation-name: cqa-vt-old-fwd; transform-origin: 30% 40%; }
+::view-transition-new(root) { animation-name: cqa-vt-new-fwd; box-shadow: -40px 0 80px -30px rgba(4, 16, 10, .45); }
+html[data-vt-dir="back"]::view-transition-old(root) { animation-name: cqa-vt-old-back; transform-origin: 70% 40%; }
+html[data-vt-dir="back"]::view-transition-new(root) { animation-name: cqa-vt-new-back; box-shadow: 40px 0 80px -30px rgba(4, 16, 10, .45); }
+
+@keyframes cqa-vt-old-fwd { to { transform: translateX(-5%) scale(.93); opacity: .2; filter: brightness(.85); } }
+@keyframes cqa-vt-new-fwd {
+  from { clip-path: inset(0 0 0 100% round 48px); transform: translateX(10%); }
+  to { clip-path: inset(0 0 0 0 round 0); transform: none; }
+}
+@keyframes cqa-vt-old-back { to { transform: translateX(5%) scale(.93); opacity: .2; filter: brightness(.85); } }
+@keyframes cqa-vt-new-back {
+  from { clip-path: inset(0 100% 0 0 round 48px); transform: translateX(-10%); }
+  to { clip-path: inset(0 0 0 0 round 0); transform: none; }
+}
+
+@keyframes cqa-art-in { from { opacity: 0; transform: translateY(40px) rotate(-3deg) scale(.94); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes cqa-art-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes cqa-wave { 0%, 100% { transform: scaleY(.55); } 50% { transform: scaleY(1); } }
+@keyframes cqa-ring-draw { to { stroke-dashoffset: 0; } }
+@keyframes cqa-pop-in-svg { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes cqa-dash-flow { to { stroke-dashoffset: -22; } }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
+  .cqa-root .cqa-art .a-ring { stroke-dashoffset: 0; }
+}
+@media (max-width: 1100px) {
+  .cqa-root .cqa-page__art { width: clamp(200px, 30vw, 300px); }
+}
+@media (max-width: 900px) {
+  .cqa-root .cqa-page__art { display: none; }
+  .cqa-root .cqa-page__head { min-height: 0; flex-wrap: wrap; }
+}
+@media (max-width: 600px) {
+  .cqa-root .cqa-display { font-size: clamp(42px, 13.5vw, 64px); }
+}
+@media print { .cqa-root .cqa-page__art { display: none; } }

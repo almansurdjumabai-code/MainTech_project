@@ -1,0 +1,119 @@
+/* ═══════════════ ATMOS — glass figure panels, white accents, a background per tab ═══════════════
+   Loaded after cinema.css (wins the cascade), before splash/print. Dark-only app. */
+
+.cqa-root {
+  --cqa-white: #F3F7F3;                       /* soft paper-white: accents, active controls */
+  --cqa-white-ink: #07120C;                   /* text on white */
+  --cqa-glass: linear-gradient(180deg, rgba(255, 255, 255, .075), rgba(255, 255, 255, .022));
+  --cqa-glass-line: rgba(255, 255, 255, .11);
+  --cqa-glass-hi: rgba(255, 255, 255, .16);
+}
+
+/* ── Glass panels for the key-figure strip under each headline ─────────────────────── */
+.cqa-root .cqa-hero {
+  gap: 14px; margin: 6px 0 44px; border: 0;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+.cqa-root .cqa-hero__cell,
+.cqa-root .cqa-hero__cell:first-child,
+.cqa-root .cqa-hero__cell + .cqa-hero__cell {
+  padding: 20px 22px 18px; min-height: 150px; border-radius: 20px;
+  background: var(--cqa-glass);
+  border: 1px solid var(--cqa-glass-line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 22px 44px -28px rgba(0, 0, 0, .8);
+  -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
+  transition: border-color 200ms ease, background-color 200ms ease;
+}
+.cqa-root .cqa-hero__cell:hover { border-color: var(--cqa-glass-hi); }
+/* the short accent bar sits inside the panel; neutral cells get the white accent */
+.cqa-root .cqa-hero__cell::before,
+.cqa-root .cqa-hero__cell + .cqa-hero__cell::before {
+  top: 0; left: 22px; width: 34px; height: 2px; border-radius: 0 0 2px 2px; background: var(--cqa-white);
+}
+.cqa-root .cqa-hero__cell--green::before { background: var(--cqa-green); }
+.cqa-root .cqa-hero__cell--red::before { background: var(--cqa-red); }
+.cqa-root .cqa-hero__cell--amber::before { background: var(--cqa-amber); }
+.cqa-root .cqa-hero__val { color: var(--cqa-white); }
+.cqa-root .cqa-hero__label { color: rgba(243, 247, 243, .72); }
+
+/* Dashboard KPI tiles and the ticker get the same glass, so no figure floats naked */
+.cqa-root .cqa-kpi {
+  border-radius: 18px; background: var(--cqa-glass); border: 1px solid var(--cqa-glass-line);
+  -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
+}
+.cqa-root .cqa-kpi + .cqa-kpi { box-shadow: none; }
+.cqa-root .cqa-ticker {
+  background: rgba(255, 255, 255, .035); border: 1px solid var(--cqa-glass-line); border-radius: 999px;
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
+.cqa-root .cqa-ticker__item b { color: var(--cqa-white); }
+
+/* Mobile: the masthead stacks; panels keep their padding */
+@media (max-width: 720px) {
+  .cqa-root .cqa-hero__cell, .cqa-root .cqa-hero__cell:first-child { padding: 16px 18px; min-height: 0; border-left: 1px solid var(--cqa-glass-line) !important; }
+}
+
+/* ── White as the second accent: active navigation and toggles ─────────────────────── */
+.cqa-root .cqa-nav__glider, .cqa-root[data-theme="dark"] .cqa-nav__glider { background: var(--cqa-white); }
+.cqa-root .cqa-nav__link.is-active, .cqa-root .cqa-nav__link.is-active:hover { color: var(--cqa-white-ink); }
+.cqa-root .cqa-nav__link.is-active .cqa-nav__count { background: var(--cqa-green-deep); color: #fff; }
+.cqa-root .cqa-seg__btn.is-active, .cqa-root[data-theme="dark"] .cqa-seg__btn.is-active {
+  background: var(--cqa-white); color: var(--cqa-white-ink); box-shadow: none;
+}
+.cqa-root .cqa-display { color: var(--cqa-white); }
+.cqa-root .cqa-btn--secondary { border-color: rgba(255, 255, 255, .14); }
+.cqa-root .cqa-btn--secondary:hover:not(:disabled) { border-color: rgba(255, 255, 255, .32); color: var(--cqa-white); }
+.cqa-root .cqa-card { border-color: rgba(255, 255, 255, .08); }
+
+/* ── A background per tab ───────────────────────────────────────────────────────────
+   One fixed layer under the chart; app.js sets data-route on the root. Pure gradients, no motion. */
+.cqa-root::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  transition: opacity 400ms ease;
+}
+
+/* Dialogs (list + card): emerald glow from the top-left, the quality-index chart stays */
+.cqa-root[data-route="conversations"]::before,
+.cqa-root[data-route="conversation"]::before {
+  background:
+    radial-gradient(60vmax 45vmax at 8% -10%, rgba(30, 138, 76, .32), transparent 65%),
+    radial-gradient(40vmax 30vmax at 100% 0%, rgba(243, 247, 243, .05), transparent 70%);
+}
+.cqa-root[data-route="conversation"] .cqa-bg svg { opacity: .55; }
+
+/* Checklists: a calm blueprint — white dot grid fading down, cool mint light top-right */
+.cqa-root[data-route="checklists"]::before {
+  background:
+    radial-gradient(circle, rgba(243, 247, 243, .22) 1.2px, transparent 1.8px) 0 0 / 28px 28px,
+    radial-gradient(55vmax 40vmax at 95% -5%, rgba(160, 230, 200, .22), transparent 65%),
+    radial-gradient(45vmax 35vmax at 0% 100%, rgba(30, 138, 76, .24), transparent 70%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .55) 55%, rgba(0, 0, 0, .25) 100%);
+          mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .55) 55%, rgba(0, 0, 0, .25) 100%);
+}
+
+/* Appeals: a spotlight — white light cone from above, fine diagonal hatching, warm glow where disputes sit */
+.cqa-root[data-route="appeals"]::before {
+  background:
+    radial-gradient(38vmax 60vmax at 50% -18%, rgba(243, 247, 243, .20), transparent 62%),
+    radial-gradient(40vmax 30vmax at 0% 100%, rgba(233, 166, 60, .16), transparent 70%),
+    repeating-linear-gradient(135deg, rgba(243, 247, 243, .05) 0 1px, transparent 1px 16px);
+}
+
+/* Dashboard: a data horizon — horizontal scan lines rising from a green floor, white light top-right */
+.cqa-root[data-route="dashboard"]::before {
+  background:
+    radial-gradient(70vmax 30vmax at 50% 115%, rgba(30, 138, 76, .42), transparent 70%),
+    radial-gradient(40vmax 30vmax at 100% -5%, rgba(243, 247, 243, .14), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(243, 247, 243, .07) 0 1px, transparent 1px 34px);
+  -webkit-mask-image: linear-gradient(0deg, #000 0%, rgba(0, 0, 0, .7) 50%, rgba(0, 0, 0, .35) 100%);
+          mask-image: linear-gradient(0deg, #000 0%, rgba(0, 0, 0, .7) 50%, rgba(0, 0, 0, .35) 100%);
+}
+
+/* The candlestick chart belongs to Dialogs; other tabs keep their own pattern clean */
+/* (opacity on the svg: the .cqa-bg element itself runs an entrance animation that owns its opacity) */
+.cqa-root:is([data-route="checklists"], [data-route="appeals"], [data-route="dashboard"]) .cqa-bg svg { opacity: 0; }
+.cqa-root .cqa-bg svg { transition: opacity 400ms ease; }
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .cqa-root :is(.cqa-hero__cell, .cqa-kpi, .cqa-ticker) { background: rgba(20, 32, 26, .92); }
+}

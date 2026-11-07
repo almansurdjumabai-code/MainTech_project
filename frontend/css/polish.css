@@ -78,17 +78,17 @@
 /* ── Savings widget ────────────────────────────────────────────────── */
 .cqa-root .cqa-savings {
   position: relative; display: grid; grid-template-columns: auto auto; gap: 6px 28px; align-items: end;
-  padding: 18px 22px; border-radius: 22px; background: var(--cqa-vault-grad); color: var(--cqa-vault-ink);
+  padding: 18px 22px; border-radius: 16px; background: var(--cqa-vault-grad); color: var(--cqa-vault-ink);
   box-shadow: 0 24px 50px -26px rgba(4, 16, 10, .9), 0 0 0 1px rgba(184, 242, 138, .12); overflow: hidden; isolation: isolate;
   animation: cqa-rise 900ms var(--cqa-expo) 300ms both;
 }
 .cqa-root .cqa-savings::before {
   content: ""; position: absolute; inset: -40% -10% auto auto; width: 60%; aspect-ratio: 1; border-radius: 50%; z-index: -1;
-  background: radial-gradient(circle, rgba(184, 242, 138, .28), transparent 65%); filter: blur(6px);
+  background: radial-gradient(circle, rgba(184, 242, 138, .28), transparent 65%);
 }
 .cqa-root .cqa-savings__main { display: flex; flex-direction: column; gap: 6px; }
 .cqa-root .cqa-savings__label { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--cqa-vault-mute); }
-.cqa-root .cqa-savings__val { display: flex; align-items: baseline; gap: 8px; font-family: "Unbounded", var(--cqa-font-display); font-weight: 300; font-size: 44px; letter-spacing: -.06em; line-height: 1; color: var(--cqa-lime); }
+.cqa-root .cqa-savings__val { display: flex; align-items: baseline; gap: 8px; font-family: var(--cqa-font-num); font-weight: 300; font-size: 44px; letter-spacing: -.04em; line-height: 1; color: var(--cqa-lime); }
 .cqa-root .cqa-savings__val .cqa-odo__col { width: .8em; }
 .cqa-root .cqa-savings__val .cqa-odo__sep { width: .3em; }
 .cqa-root .cqa-savings__val small { font-family: var(--cqa-font-sans); font-size: 14px; font-weight: 600; letter-spacing: -.01em; color: var(--cqa-vault-ink); }
@@ -137,13 +137,13 @@
 .cqa-root .cqa-ai-result__answers { display: flex; align-items: center; gap: 10px; }
 .cqa-root .cqa-ai-result__arrow { color: var(--cqa-mute); font-weight: 600; }
 .cqa-root .cqa-ai-result__score {
-  display: flex; flex-direction: column; gap: 8px; padding: 18px 20px; border-radius: 18px; background: var(--cqa-vault-grad); color: var(--cqa-vault-ink);
+  display: flex; flex-direction: column; gap: 8px; padding: 18px 20px; border-radius: 16px; background: var(--cqa-vault-grad); color: var(--cqa-vault-ink);
 }
 .cqa-root .cqa-ai-result--revised .cqa-ai-result__score { box-shadow: 0 0 0 1px rgba(184, 242, 138, .25), 0 18px 40px -20px rgba(81, 175, 61, .7); }
 .cqa-root .cqa-ai-result__label { font-size: 13px; font-weight: 600; color: var(--cqa-vault-mute); }
 .cqa-root .cqa-ai-result__nums { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .cqa-root .cqa-ai-result__nums s { font-size: 22px; font-weight: 600; color: var(--cqa-vault-mute); }
-.cqa-root .cqa-ai-result__nums b { font-family: "Unbounded", var(--cqa-font-display); font-size: 40px; font-weight: 300; letter-spacing: -.06em; color: var(--cqa-lime); }
+.cqa-root .cqa-ai-result__nums b { font-family: var(--cqa-font-num); font-size: 40px; font-weight: 300; letter-spacing: -.04em; color: var(--cqa-lime); }
 .cqa-root .cqa-ai-result__nums b .cqa-odo__col { width: .8em; }
 .cqa-root .cqa-ai-result__nums .cqa-ai-result__arrow { color: var(--cqa-vault-mute); }
 .cqa-root .cqa-ai-result__why { font-size: 14px; color: var(--cqa-graphite); }
@@ -153,7 +153,7 @@
   .cqa-root .cqa-queue { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 1024px) {
-  .cqa-root .cqa-header__inner { height: auto; min-height: 60px; flex-wrap: wrap; row-gap: 8px; padding: 8px 10px; border-radius: 28px; }
+  .cqa-root .cqa-header__inner { height: auto; min-height: 60px; flex-wrap: wrap; row-gap: 8px; padding: 8px 10px; border-radius: 16px; }
   .cqa-root .cqa-header__tools { flex-wrap: wrap; justify-content: flex-end; }
 }
 @media (max-width: 1100px) {
@@ -162,7 +162,7 @@
   .cqa-root .cqa-cardpage__bar .cqa-mode__time { display: none; }
 }
 @media (max-width: 760px) {
-  .cqa-root .cqa-header__inner { border-radius: 24px; gap: 8px; }
+  .cqa-root .cqa-header__inner { border-radius: 16px; gap: 8px; }
   .cqa-root .cqa-nav { order: 3; width: 100%; overflow-x: auto; scrollbar-width: none; }
   .cqa-root .cqa-header__tools { gap: 6px; }
   .cqa-root .cqa-source { display: none; }
@@ -174,7 +174,7 @@
   .cqa-root .cqa-kpi__val { font-size: 36px; }
   .cqa-root .cqa-cardpage__bar { gap: 8px; }
   .cqa-root .cqa-cardpage__bar .cqa-mode { display: none; }
-  .cqa-root .cqa-modal { padding: 22px; border-radius: 24px; }
+  .cqa-root .cqa-modal { padding: 22px; border-radius: 16px; }
   .cqa-root .cqa-ai-result__nums b { font-size: 32px; }
   .cqa-root .cqa-evidence__meta { display: none; }
   /* nothing may force the layout viewport wider than the phone */
