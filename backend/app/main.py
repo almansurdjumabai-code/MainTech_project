@@ -4,10 +4,11 @@
 from __future__ import annotations
 
 import logging
+import mimetypes
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -15,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from ml.judges import make_judge
 from scoring.checklist import Checklist
 
-from . import audio, config, db, labeling, service
+from . import audio, config, db, frontend_api, labeling, service
 from .ingest import IngestError, ingest_group
 from .schemas import AppealIn, BatchIn, EvaluateIn, ReviewIn
 
@@ -34,6 +35,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="CQA backend", version="0.1.0", lifespan=lifespan)
 app.include_router(labeling.router)
+app.include_router(frontend_api.router)  # контракт UI: frontend/docs/API_CONTRACT.md
+# Windows иногда отдаёт .js как text/plain (из реестра) — тогда ES-модули UI не грузятся
+mimetypes.add_type("text/javascript", ".js")
+mimetypes.add_type("application/json", ".json")
+FRONTEND_DIR = config.ROOT / "frontend"
+if FRONTEND_DIR.is_dir():
+    # UI + API + модель одним процессом: http://127.0.0.1:8000/
+    app.mount("/app", StaticFiles(directory=FRONTEND_DIR, html=True), name="app")
 # Инструмент слепой разметки тестового сплита (eval), не продуктовый UI: http://127.0.0.1:8000/labeler/
 app.mount("/labeler", StaticFiles(directory=config.ROOT / "eval" / "labeler", html=True), name="labeler")
 app.add_middleware(
@@ -52,6 +61,13 @@ async def _nf(_, exc):
 @app.exception_handler(service.BadRequest)
 async def _br(_, exc):
     return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+
+@app.get("/", include_in_schema=False)
+def root(request: Request):
+    if not FRONTEND_DIR.is_dir():
+        return RedirectResponse("/docs")
+    return RedirectResponse(f"/app/?mock=0&api={str(request.base_url).rstrip('/')}")
 
 
 @app.get("/health")

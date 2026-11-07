@@ -73,22 +73,44 @@ function savings(conversations) {
   return { hours, ai, human: hours * QA_RATE_USD, n: evaluated.length };
 }
 
+/** Seconds -> "22 мс" / "4.5 с" / "3.2 мин" / "1.5 ч". */
+function fmtDur(sec) {
+  if (sec < 1) return `${Math.max(1, Math.round(sec * 1000))} ${t('unit.ms')}`;
+  if (sec < 60) return `${fmtNum(sec, sec < 10 ? 2 : 0)} ${t('unit.sec')}`;
+  if (sec < 3600) return `${fmtNum(sec / 60, 1)} ${t('unit.min')}`;
+  return `${fmtNum(sec / 3600, 1)} ${t('unit.hour')}`;
+}
+
 /** @param {HTMLElement} root */
 export function mount(root) {
   let ready = false;
+  /** Real numbers from the backend (GET /api/stats); null in mock mode or if the call fails. */
+  let server = null;
+  const loadServer = () => {
+    if (!api.stats) return;
+    api.stats().then((r) => { server = r; draw(); }).catch(() => { server = null; });
+  };
   const readyTimer = window.setTimeout(() => { ready = true; draw(); }, 450);
 
   function savingsWidget(sv) {
+    const ai = server ? server.aiCostUsd : sv.ai;
+    const fact = server ? html`<div class="cqa-savings__fact">
+        <span>${icon('cpu', { size: 13 })}${t('dash.machineTime', { time: fmtDur(server.machineSeconds), avg: fmtDur(server.avgMs / 1000), n: server.evaluations })}</span>
+        <span>${icon('cloud', { size: 13 })}${server.llmUsed
+          ? t('dash.llmFact', { model: server.models.filter((m) => m !== 'rule-based-v1').join(', '), calls: fmtNum(server.llmCalls), tin: fmtNum(server.tokens.in), tout: fmtNum(server.tokens.out), avg: fmtUsd(server.avgCostUsd, 4) })
+          : t(server.llmConnected ? 'dash.llmReady' : 'dash.noLlm', { model: server.currentModel })}</span>
+      </div>` : '';
     return html`<aside class="cqa-savings" aria-label="${t('dash.savings')}">
       <div class="cqa-savings__main">
         <span class="cqa-savings__label">${icon('clockfast', { size: 16 })}${t('dash.savedTime')}</span>
         <span class="cqa-savings__val"><span data-sv-hours></span><small>${t('dash.hoursQa')}</small></span>
       </div>
       <div class="cqa-savings__cost">
-        <span><b class="cqa-num">${fmtUsd(sv.ai, 2)}</b> ${t('dash.aiCost')}</span>
+        <span><b class="cqa-num">${fmtUsd(ai, ai > 0 && ai < 1 ? 4 : 2)}</b> ${t('dash.aiCost')}${server ? html` <span class="cqa-savings__tag">${t('dash.fact')}</span>` : ''}</span>
         <span class="cqa-savings__vs">${t('dash.insteadOf')} <s class="cqa-num">≈ ${fmtUsd(Math.round(sv.human), 0)}</s> ${t('dash.humanQa')}</span>
       </div>
-      <span class="cqa-savings__note" title="${t('dash.savingsAssumptions', { chat: QA_MIN_CHAT, factor: QA_VOICE_FACTOR, rate: QA_RATE_USD })}">${icon('info', { size: 13 })}${t('dash.estimate')}</span>
+      ${fact}
+      <span class="cqa-savings__note" title="${t('dash.savingsAssumptions', { chat: QA_MIN_CHAT, factor: QA_VOICE_FACTOR, rate: QA_RATE_USD })}">${icon('info', { size: 13 })}${server ? t('dash.estimateHours') : t('dash.estimate')}</span>
     </aside>`;
   }
 
@@ -188,7 +210,9 @@ export function mount(root) {
   };
   root.addEventListener('click', onClick);
   draw();
+  loadServer();
   const unsub = store.subscribe((s, p) => {
+    if (s.conversations !== p.conversations) loadServer(); // new evaluations -> fresh spend/time
     if (s.conversations !== p.conversations || s.appeals !== p.appeals || s.loading !== p.loading || s.checklists !== p.checklists) draw();
   });
   return { update() {}, destroy() { clearTimeout(readyTimer); unsub(); root.removeEventListener('click', onClick); root.innerHTML = ''; } };

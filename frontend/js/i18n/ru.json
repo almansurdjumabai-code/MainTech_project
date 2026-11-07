@@ -455,5 +455,15 @@
   "checklist.draftKeptHint": "Вернитесь в «Чек-листы», чтобы сохранить его как версию.",
   "bg.norm": "норма",
   "bg.risk": "риск",
-  "bg.index": "Индекс качества диалогов"
+  "bg.index": "Индекс качества диалогов",
+  "dash.fact": "факт",
+  "dash.machineTime": "Машинное время: {time} на {n} оценок (≈ {avg} на диалог)",
+  "dash.llmFact": "{model}: {calls} вызовов, {tin} / {tout} токенов, ≈ {avg} за оценку",
+  "dash.noLlm": "LLM не подключена — оценка правилами, $0",
+  "dash.llmReady": "Подключена {model}; сохранённые оценки сделаны правилами",
+  "dash.estimateHours": "Часы QA — оценка по допущениям; затраты и время — факт из backend",
+  "unit.sec": "с",
+  "unit.min": "мин",
+  "unit.hour": "ч",
+  "unit.ms": "мс"
 }

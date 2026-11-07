@@ -172,6 +172,8 @@ class ClaudeJudge:
             lines.append(f"N/A allowed only when: {crit.get('na_condition')}")
         else:
             lines.append("N/A is NOT allowed for this criterion.")
+        if crit.get("ai_guidance"):
+            lines.append(f"Guidance: {crit['ai_guidance']}")
         lines.append(f"Allowed answers: {', '.join(allowed_answers(crit))}")
         return "\n".join(lines)
 
