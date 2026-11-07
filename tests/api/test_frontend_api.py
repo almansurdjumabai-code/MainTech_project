@@ -177,6 +177,15 @@ def test_new_checklist_version_activate_and_rescore(client):
     assert bad.status_code == 400 and isinstance(bad.json()["detail"], str)
 
 
+def test_evaluation_time_is_last_rescoring_not_first_insert(client):
+    first = client.get(f"/api/conversations/{IDS[2]}").json()["evaluation"]
+    time.sleep(1.1)
+    job = wait_job(client, client.post("/api/evaluations", json={"conversationIds": [IDS[2]], "checklistId": first["checklistId"],
+                                                                 "model": "rule-based-v1"}).json()["jobId"])
+    again = client.get(f"/api/evaluations/{job['items'][0]['evaluationId']}").json()
+    assert again["createdAt"] > first["createdAt"]
+
+
 def test_models_and_import(client):
     models = client.get("/api/models").json()
     assert any(m["id"] == "rule-based-v1" and m["costUsd"] == 0 for m in models)
