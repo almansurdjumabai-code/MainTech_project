@@ -3,7 +3,7 @@ import { html, render, raw, $, fmtScore, fmtNum, fmtUsd } from '../core/utils.js
 import { icon } from '../core/icons.js';
 import { t } from '../core/i18n.js';
 import { store, activeChecklist } from '../core/store.js';
-import { computeStats } from '../core/stats.js';
+import { computeStats, MIN_DECIDED } from '../core/stats.js';
 import { api } from '../api/client.js';
 import { bootstrap } from '../core/actions.js';
 import { config } from '../config.js';
@@ -169,7 +169,7 @@ export function mount(root) {
         <div class="cqa-kpi" style="--i:3"><span class="cqa-eyebrow">${t('dash.appeals')}</span><span class="cqa-kpi__val cqa-num">${st.appeals.total}</span>
           <span class="cqa-kpi__sub">${t('dash.appealsSub', { open: st.appeals.open, changed: st.appeals.changed, decided: st.appeals.decided })}</span></div>
         <div class="cqa-kpi" style="--i:4"><span class="cqa-eyebrow">${t('dash.accuracy')}</span><span class="cqa-kpi__val cqa-num" style="color:var(--cqa-green-text)">${pct(st.appeals.aiAccuracy)}</span>
-          <span class="cqa-kpi__sub">${t('dash.accuracySub', { rate: pct(st.appeals.changeRate) })}</span></div>
+          <span class="cqa-kpi__sub">${st.appeals.aiAccuracy == null ? t('dash.accuracyFew', { n: st.appeals.decided, min: MIN_DECIDED }) : t('dash.accuracySub', { rate: pct(st.appeals.changeRate) })}</span></div>
       </div>
       <div class="cqa-dash__grid">
         <section class="cqa-card cqa-dash__cell cqa-stack-y"><div class="cqa-row cqa-row--between"><h2 class="cqa-h3">${t('dash.histogram')}</h2><span class="cqa-click-hint">${icon('target', { size: 13 })}${t('dash.clickHint')}</span></div>${histogram(st.histogram)}</section>

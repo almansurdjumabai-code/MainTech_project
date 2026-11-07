@@ -1,6 +1,9 @@
 /** Dashboard metrics computed client-side from the conversation list. */
 import { criterionPoints, evaluationAnswers, round2 } from './scoring.js';
 
+/** Minimum reviewer decisions before the dashboard shows an AI accuracy percentage. */
+export const MIN_DECIDED = 5;
+
 const LANGS = ['RU', 'KZ', 'EN'];
 
 /**
@@ -59,8 +62,9 @@ export function computeStats(conversations, appeals, checklist) {
     avg, avgAI, histogram, byLang, byChannel, criteria, gross,
     appeals: {
       total: appeals.length, open, decided: decided.length, changed,
-      changeRate: decided.length ? changed / decided.length : null,
-      aiAccuracy: decided.length ? 1 - changed / decided.length : null,
+      // 1-2 decisions are not an accuracy figure: show it only from MIN_DECIDED appeals on
+      changeRate: decided.length >= MIN_DECIDED ? changed / decided.length : null,
+      aiAccuracy: decided.length >= MIN_DECIDED ? 1 - changed / decided.length : null,
     },
     problems: [...criteria].filter((c) => c.pass != null).sort((a, b) => a.pass - b.pass).slice(0, 3),
     langs: LANGS,

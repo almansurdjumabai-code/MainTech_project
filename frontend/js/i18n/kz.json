@@ -465,5 +465,6 @@
   "unit.sec": "с",
   "unit.min": "мин",
   "unit.hour": "сағ",
-  "unit.ms": "мс"
+  "unit.ms": "мс",
+  "dash.accuracyFew": "апелляция шешімдері: {n}; пайыз — {min} бастап"
 }

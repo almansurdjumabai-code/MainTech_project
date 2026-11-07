@@ -38,6 +38,8 @@ LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "3"))  # SDK: экспоне�
 OPENAI_COMPAT_BASE_URL = os.getenv("OPENAI_COMPAT_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai").strip()
 OPENAI_COMPAT_API_KEY = os.getenv("OPENAI_COMPAT_API_KEY", "").strip()
 OPENAI_COMPAT_MODEL = os.getenv("OPENAI_COMPAT_MODEL", "gemini-flash-latest")
+# запасная модель со своей дневной квотой: при исчерпании квоты основной переключаемся сразу, без ожидания
+OPENAI_COMPAT_FALLBACK_MODEL = os.getenv("OPENAI_COMPAT_FALLBACK_MODEL", "").strip()
 OPENAI_COMPAT_JSON_MODE = os.getenv("OPENAI_COMPAT_JSON_MODE", "json_schema")  # json_schema | json_object
 OPENAI_COMPAT_PRICE_IN = float(os.getenv("OPENAI_COMPAT_PRICE_IN", "0"))  # бесплатный тариф = 0
 OPENAI_COMPAT_PRICE_OUT = float(os.getenv("OPENAI_COMPAT_PRICE_OUT", "0"))

@@ -335,10 +335,14 @@ class ClaudeJudge:
             self._cache_put(key, crit["id"], data)
         return out
 
+    def _on_fallback_model(self) -> bool:
+        fb = getattr(self, "fallback_model", "")
+        return bool(fb) and self.model == fb
+
     def judge_all(self, ctx: Ctx, crits: list[dict], hints: dict[str, dict], usage: Usage) -> dict[str, dict]:
         """Стратегия single_call: один запрос на все критерии, которых нет в кэше."""
         out: dict[str, dict] = {}
-        votes = config.LLM_VOTES
+        votes = 1 if self._on_fallback_model() else config.LLM_VOTES  # запасная модель медленная — одно прочтение
         mode = "multi" if votes == 1 else f"multi-v{votes}"  # кэш голосования не смешивается с одиночными ответами
         keys = {c["id"]: self._key(ctx, self._task(c, hints[c["id"]]), mode) for c in crits}
         todo = []
@@ -361,7 +365,9 @@ class ClaudeJudge:
             {"type": "text", "text": task},
         ]}]
         samples, last_exc = [], None
-        for _ in range(votes):
+        for i in range(votes):
+            if i and self._on_fallback_model():  # квота кончилась посреди голосования — дальше не ждём медленную модель
+                break
             try:
                 samples.append(self._call(messages, self._multi_schema(todo), 2000 + 1500 * len(todo), usage))
             except self._errors() as exc:  # часть прочтений может не удаться — голосуем по остальным

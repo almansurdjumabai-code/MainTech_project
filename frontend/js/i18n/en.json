@@ -465,5 +465,6 @@
   "unit.sec": "s",
   "unit.min": "min",
   "unit.hour": "h",
-  "unit.ms": "ms"
+  "unit.ms": "ms",
+  "dash.accuracyFew": "appeal decisions: {n}; percentage from {min}"
 }
