@@ -166,3 +166,16 @@ def test_invalid_payloads_rejected(client):
     assert client.post("/evaluate", json={"conversation_id": "nope"}).status_code == 404
     assert client.post("/evaluate", json={"transcript": [{"speaker": "hacker", "text": "x"}]}).status_code == 422
     assert client.post("/results/999999/appeals", json={"criterion_id": "C1", "comment": "x"}).status_code == 404
+
+
+def test_checklist_id_cannot_escape_checklist_dir(client):
+    cl = client.get("/checklists/cqa-default-v1").json()
+    for k in ("family", "version", "created_at"):
+        cl.pop(k, None)
+    cl["id"] = "../../evil-v1"
+    r = client.post("/checklists", json=cl)
+    assert r.status_code in (201, 422)
+    if r.status_code == 201:
+        assert "/" not in r.json()["id"] and ".." not in r.json()["id"]
+    root = Path(service.config.CHECKLIST_DIR).resolve()
+    assert not list(root.parent.parent.glob("evil-v*.json")) and not list(root.parent.glob("evil-v*.json"))

@@ -8,6 +8,7 @@ import json
 import logging
 import threading
 import uuid
+from pathlib import Path
 from collections import Counter, defaultdict
 
 from ml.judges import answer_label, make_judge
@@ -42,7 +43,9 @@ def seed_checklists() -> None:
 
 def create_checklist(payload: dict) -> dict:
     model = Checklist.model_validate(payload)
-    family = model.family or (payload.get("id", "").rsplit("-v", 1)[0] if payload.get("id") else "") or slugify(model.name)
+    # family из id тоже нормализуем: id приходит от клиента и попадает в имя файла (защита от ../)
+    family = model.family or slugify(str(payload.get("id") or "").rsplit("-v", 1)[0]) if (model.family or payload.get("id")) else ""
+    family = family if family and family != "checklist" else slugify(model.name)
     version = db.next_version(family)
     body = model.model_dump(exclude_none=False)
     body.update({"id": f"{family}-v{version}", "family": family, "version": version})
@@ -52,7 +55,10 @@ def create_checklist(payload: dict) -> dict:
         c["section"] = c.get("section") or sec_of.get(c["id"])
     db.insert_checklist(body)
     try:  # версионированный JSON рядом с seed-файлами (удобно коммитить)
-        (config.CHECKLIST_DIR / f"{body['id']}.json").write_text(json.dumps(body, ensure_ascii=False, indent=2), encoding="utf-8")
+        target = (config.CHECKLIST_DIR / f"{body['id']}.json").resolve()
+        if target.parent != Path(config.CHECKLIST_DIR).resolve():
+            raise OSError("checklist path escapes CHECKLIST_DIR")
+        target.write_text(json.dumps(body, ensure_ascii=False, indent=2), encoding="utf-8")
     except OSError:
         log.warning("could not write checklist file %s", body["id"])
     return db.get_checklist(body["id"])
