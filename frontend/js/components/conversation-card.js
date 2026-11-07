@@ -2,7 +2,7 @@
  * Conversation card (main screen): transcript (+ call player) on the left, result on the right.
  * Deep link: #/conversation/{id}?msg={index}
  */
-import { html, render, $, $$, isVoice, downloadFile, fmtScore, fmtNum, fmtUsd, transcriptOffsets } from '../core/utils.js';
+import { html, render, $, $$, isVoice, downloadFile, fmtScore, fmtNum, fmtUsd, transcriptOffsets, storage } from '../core/utils.js';
 import { icon } from '../core/icons.js';
 import { t } from '../core/i18n.js';
 import { api } from '../api/client.js';
@@ -338,7 +338,7 @@ export function mount(root, props) {
   const onChange = (e) => {
     const el = e.target instanceof HTMLSelectElement ? e.target : null;
     if (el?.dataset.field === 'checklist') store.set({ checklistId: el.value });
-    if (el?.dataset.field === 'model') store.set({ model: el.value });
+    if (el?.dataset.field === 'model') { storage.set('modelPicked', true); store.set({ model: el.value }); }
   };
   /** WAI-ARIA tabs: roving tabindex, the active tab is in the URL (?tab=trace). */
   function selectTab(k, focus = false) {

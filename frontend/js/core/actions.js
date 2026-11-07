@@ -12,7 +12,9 @@ export async function bootstrap() {
       api.listChecklists(), api.listModels().catch(() => []), api.listConversations(), api.listAppeals(),
     ]);
     const s = store.get();
-    const model = models.find((m) => m.id === s.model)?.id || models[0]?.id || null;
+    // Remember only a model the user picked: an auto-choice made before an LLM key appeared must not stick.
+    const picked = storage.get('modelPicked', false) ? models.find((m) => m.id === s.model)?.id : null;
+    const model = picked || models[0]?.id || null;
     store.set({ checklists, models, conversations, appeals, model, loading: false });
     storage.set('cache.conversations', conversations.map(({ evaluation, ...c }) => c));
   } catch (e) {

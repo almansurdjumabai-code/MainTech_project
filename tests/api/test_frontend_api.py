@@ -63,7 +63,9 @@ def test_health_and_root_serves_ui(client):
     assert r.status_code in (302, 307) and r.headers["location"].startswith("/app/?mock=0&api=")
     page = client.get("/app/")
     assert page.status_code == 200 and "js/app.js" in page.text
-    assert client.get("/app/js/app.js").headers["content-type"].startswith("text/javascript")
+    js = client.get("/app/js/app.js")
+    assert js.headers["content-type"].startswith("text/javascript")
+    assert js.headers["cache-control"] == "no-cache"  # после обновления браузер не держит старые модули
 
 
 def test_dataset_loads_and_unknown_group_is_404(client):
