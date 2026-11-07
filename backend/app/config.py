@@ -29,6 +29,9 @@ LLM_STRATEGY = os.getenv("LLM_STRATEGY", "per_criterion").lower()
 # не оплачивают уже оценённые критерии заново
 LLM_RESULT_CACHE = os.getenv("LLM_RESULT_CACHE", "1").lower() not in ("0", "false", "no")
 LLM_TIMEOUT_SEC = float(os.getenv("LLM_TIMEOUT_SEC", "120"))
+# Голосование: N независимых прочтений диалога, по каждому критерию — ответ большинства;
+# расхождение прочтений понижает уверенность и отправляет критерий на ручную проверку (1 = выключено)
+LLM_VOTES = max(1, int(os.getenv("LLM_VOTES", "1")))
 LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "3"))  # SDK: экспоненциальный backoff на 429/5xx/сеть
 
 # OpenAI-совместимый провайдер (по умолчанию — бесплатный Gemini API из Google AI Studio)

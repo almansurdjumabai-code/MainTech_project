@@ -98,6 +98,39 @@ def test_rate_limit_is_retried():
     assert out["source"] == "llm" and len(calls) == 2
 
 
+def test_vote_majority_median_and_confidence():
+    from ml.judges import vote
+    a = lambda ans, conf="high": {"answer": ans, "confidence": conf, "explanation": str(ans)}  # noqa: E731
+    assert vote([a("YES"), a("YES"), a("YES")])["confidence"] == "high"
+    two = vote([a("NO"), a("YES"), a("YES")])
+    assert two["answer"] == "YES" and two["confidence"] == "medium" and two["votes"] == ["NO", "YES", "YES"]
+    split = vote([a(20), a(5), a(10)])
+    assert split["answer"] == 10 and split["confidence"] == "low"  # шкала без большинства — медиана, на проверку
+    assert vote([a("NA"), a("NO"), a("YES")])["confidence"] == "low"
+    assert vote([None, a("NO")])["answer"] == "NO"  # неудачное прочтение не мешает
+
+
+def test_single_call_voting_uses_majority(monkeypatch):
+    monkeypatch.setattr(config, "LLM_STRATEGY", "single_call")
+    monkeypatch.setattr(config, "LLM_VOTES", 3)
+    ans = answers()
+    flip = {"C1": {**ans["C1"], "answer": "NO" if ans["C1"]["answer"] == "YES" else "YES"}}
+
+    def reply(r, body, n):
+        payload = {**ans, **(flip if n == 2 else {})}  # второе прочтение не согласно по C1
+        if n == 3:
+            return httpx.Response(503)  # третье прочтение упало: голосуем по двум оставшимся
+        return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps(payload)}, "finish_reason": "stop"}], "usage": {}})
+    monkeypatch.setattr(config, "LLM_MAX_RETRIES", 0)
+    t, calls = server(reply)
+    res = evaluate_conversation(CONV, CHECKLIST, judge(t))
+    c1 = next(c for c in res["criteria"] if c["id"] == "C1")
+    assert len(calls) == 3 and c1["source"] == "llm"
+    assert c1["llm_votes"] is not None and len(c1["llm_votes"]) == 2
+    assert c1["answer"] == ans["C1"]["answer"]  # при ничьей 1:1 — первое прочтение, уверенность low
+    assert c1["llm_confidence"] == "low" and c1["needs_review"]
+
+
 def test_provider_content_filter_falls_back_with_readable_reason():
     # Gemini: finish_reason="content_filter: PROHIBITED_CONTENT" без message (встречается на диалогах с грубыми нарушениями)
     t, calls = server(lambda r, b, n: httpx.Response(200, json={"choices": [

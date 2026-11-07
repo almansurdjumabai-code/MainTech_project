@@ -24,6 +24,31 @@ ANSWER_RU = {"YES": "Да", "NO": "Нет", "NA": "N/A"}
 CONFIDENCE = ["high", "medium", "low"]
 
 
+def vote(items: list[dict]) -> dict:
+    """Голосование по нескольким прочтениям одного критерия: ответ большинства.
+    Единогласно — уверенность модели сохраняется; 2 из 3 — не выше medium; большинства нет — low (уйдёт на проверку).
+    Для шкалы без большинства берётся медиана."""
+    valid = [it for it in items if isinstance(it, dict) and isinstance(it.get("answer"), (str, int))]
+    if not valid:
+        raise ValueError("no valid votes")
+    if len(valid) == 1:
+        return valid[0]
+    keys = [str(it["answer"]).upper() for it in valid]
+    counts = {k: keys.count(k) for k in keys}
+    top = max(keys, key=lambda k: (counts[k], -keys.index(k)))
+    if counts[top] * 2 <= len(keys):  # большинства нет
+        nums = sorted(int(k) for k in keys if k.lstrip("-").isdigit())
+        if len(nums) == len(keys):
+            top = str(nums[len(nums) // 2])
+    chosen = dict(next((it for it, k in zip(valid, keys) if k == top), valid[0]))
+    if counts.get(top, 0) * 2 <= len(keys):
+        chosen["confidence"] = "low"
+    elif counts[top] < len(keys) and chosen.get("confidence") == "high":
+        chosen["confidence"] = "medium"
+    chosen["votes"] = keys
+    return chosen
+
+
 def answer_label(answer) -> str:
     return ANSWER_RU.get(str(answer), f"{answer} баллов" if str(answer).isdigit() else str(answer))
 
@@ -289,6 +314,7 @@ class ClaudeJudge:
             "evidence_list": [_strip(e) for e in evidence],
             "expected": expected,
             "llm_confidence": conf if conf in CONFIDENCE else None,
+            "llm_votes": data.get("votes"),  # ответы отдельных прочтений при голосовании
             "source": "llm-cache" if cached else "llm",
         }
 
@@ -312,7 +338,9 @@ class ClaudeJudge:
     def judge_all(self, ctx: Ctx, crits: list[dict], hints: dict[str, dict], usage: Usage) -> dict[str, dict]:
         """Стратегия single_call: один запрос на все критерии, которых нет в кэше."""
         out: dict[str, dict] = {}
-        keys = {c["id"]: self._key(ctx, self._task(c, hints[c["id"]]), "multi") for c in crits}
+        votes = config.LLM_VOTES
+        mode = "multi" if votes == 1 else f"multi-v{votes}"  # кэш голосования не смешивается с одиночными ответами
+        keys = {c["id"]: self._key(ctx, self._task(c, hints[c["id"]]), mode) for c in crits}
         todo = []
         for c in crits:
             data = self._cache_get(keys[c["id"]])
@@ -332,15 +360,19 @@ class ClaudeJudge:
             {"type": "text", "text": self._shared(ctx), "cache_control": {"type": "ephemeral"}},
             {"type": "text", "text": task},
         ]}]
-        try:
-            data = self._call(messages, self._multi_schema(todo), 2000 + 1500 * len(todo), usage)
-        except self._errors() as exc:
+        samples, last_exc = [], None
+        for _ in range(votes):
+            try:
+                samples.append(self._call(messages, self._multi_schema(todo), 2000 + 1500 * len(todo), usage))
+            except self._errors() as exc:  # часть прочтений может не удаться — голосуем по остальным
+                last_exc = exc
+        if not samples:
             for c in todo:
-                out[c["id"]] = self._fallback(ctx, c, hints[c["id"]], usage, exc)
+                out[c["id"]] = self._fallback(ctx, c, hints[c["id"]], usage, last_exc)
             return out
         for c in todo:
             try:
-                item = data[c["id"]]
+                item = vote([s.get(c["id"]) for s in samples if isinstance(s, dict)])
                 out[c["id"]] = self._to_judgment(ctx, item, False)
                 self._cache_put(keys[c["id"]], c["id"], item)
             except self._errors() as exc:
