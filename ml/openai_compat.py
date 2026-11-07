@@ -125,8 +125,12 @@ class OpenAICompatJudge(ClaudeJudge):
             u = data.get("usage") or {}
             cached = ((u.get("prompt_tokens_details") or {}).get("cached_tokens")) or 0
             usage.add((u.get("prompt_tokens") or 0) - cached, u.get("completion_tokens") or 0, 0, cached)
-            choice = data["choices"][0]
+            choice = (data.get("choices") or [{}])[0]
             if choice.get("finish_reason") == "length":
                 raise RuntimeError("output truncated (max_tokens)")
+            if not isinstance(choice.get("message"), dict):
+                # провайдер вернул ответ без текста (например, сработал его фильтр безопасности) — понятная ошибка вместо KeyError
+                raise RuntimeError(f"provider returned no message (finish_reason={choice.get('finish_reason')!r}, "
+                                   f"keys={sorted(choice)})")
             return parse_json(choice["message"].get("content") or "")
         raise RuntimeError("provider: retries exhausted")

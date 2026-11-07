@@ -98,6 +98,15 @@ def test_rate_limit_is_retried():
     assert out["source"] == "llm" and len(calls) == 2
 
 
+def test_provider_content_filter_falls_back_with_readable_reason():
+    # Gemini: finish_reason="content_filter: PROHIBITED_CONTENT" без message (встречается на диалогах с грубыми нарушениями)
+    t, calls = server(lambda r, b, n: httpx.Response(200, json={"choices": [
+        {"index": 0, "finish_reason": "content_filter: PROHIBITED_CONTENT"}], "usage": {}}))
+    res = evaluate_conversation(CONV, CHECKLIST, judge(t))
+    assert all(c["source"] == "rules-fallback" for c in res["criteria"])
+    assert res["review_required"] and any("PROHIBITED_CONTENT" in e for e in res["pipeline"]["errors"])
+
+
 def test_persistent_server_error_falls_back_to_rules():
     t, calls = server(lambda r, b, n: httpx.Response(503))
     res = evaluate_conversation(CONV, CHECKLIST, judge(t))
