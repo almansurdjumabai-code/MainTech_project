@@ -455,5 +455,15 @@
   "checklist.draftKeptHint": "Go back to Checklists to save it as a version.",
   "bg.norm": "standard",
   "bg.risk": "risk",
-  "bg.index": "Conversation quality index"
+  "bg.index": "Conversation quality index",
+  "dash.fact": "actual",
+  "dash.machineTime": "Machine time: {time} for {n} evaluations (≈ {avg} per dialog)",
+  "dash.llmFact": "{model}: {calls} calls, {tin} / {tout} tokens, ≈ {avg} per evaluation",
+  "dash.noLlm": "No LLM connected — rule-based scoring, $0",
+  "dash.llmReady": "{model} connected; saved evaluations were made by rules",
+  "dash.estimateHours": "QA hours are an estimate; spend and time are actual backend data",
+  "unit.sec": "s",
+  "unit.min": "min",
+  "unit.hour": "h",
+  "unit.ms": "ms"
 }

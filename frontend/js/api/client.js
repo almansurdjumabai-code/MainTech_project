@@ -58,6 +58,8 @@ export const httpApi = {
   takeAppeal: (id) => request('POST', `/api/appeals/${enc(id)}/take`),
   decideAppeal: (id, body) => request('POST', `/api/appeals/${enc(id)}/decision`, body),
   aiReview: (id) => request('POST', `/api/appeals/${enc(id)}/ai-review`),
+  /** Fact from saved evaluations: AI spend, machine time, tokens, models. */
+  stats: () => request('GET', '/api/stats'),
 };
 
 /** @type {typeof httpApi & {reset?: () => Promise<void>}} */

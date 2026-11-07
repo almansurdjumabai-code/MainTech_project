@@ -181,3 +181,9 @@ def test_models_and_import(client):
     rec = {"conversation_id": "imp-1", "transcript": [{"timestamp": "00:00", "speaker": "client", "text": "Привет, как открыть счёт?"}]}
     assert client.post("/api/conversations/import", json={"records": [rec]}).json() == {"imported": 1, "ids": ["imp-1"]}
     assert client.post("/api/conversations/import", json={"records": []}).status_code == 400
+
+
+def test_stats_are_real_numbers_from_saved_evaluations(client):
+    s = client.get("/api/stats").json()
+    assert s["evaluations"] >= len(IDS) and s["aiCostUsd"] == 0 and s["llmUsed"] is False  # без ключа — правила, $0
+    assert s["machineSeconds"] >= 0 and s["models"] == ["rule-based-v1"]

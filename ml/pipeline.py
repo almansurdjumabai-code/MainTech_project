@@ -23,7 +23,7 @@ def _to_contract(c: dict) -> dict:
 
 
 def evaluate_conversation(conversation: dict, checklist: dict, judge=None) -> dict:
-    t0 = time.time()
+    t0 = time.perf_counter()
     judge = judge or make_judge()
     ctx = build_ctx(conversation)
     hints = retrieve(ctx, checklist)  # Pass A
@@ -79,7 +79,7 @@ def evaluate_conversation(conversation: dict, checklist: dict, judge=None) -> di
             "llm_fallbacks": usage.fallbacks,
             "errors": usage.errors[:10],
             "consistency_notes": notes,
-            "duration_sec": round(time.time() - t0, 2),
+            "duration_sec": round(time.perf_counter() - t0, 4),
         },
     }
 

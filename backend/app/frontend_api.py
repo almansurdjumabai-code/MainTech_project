@@ -608,3 +608,24 @@ def ai_review(appeal_id: str):
     meta = _appeal_meta(a["appeal_id"])
     db.setting_put(f"appeal:{a['appeal_id']}", {**meta, "ai_review": review_out})
     return review_out
+
+
+@router.get("/stats")
+def stats():
+    """Факт из сохранённых оценок (последняя оценка каждого диалога): деньги на модель, машинное время, токены."""
+    latest = _latest_by_conversation(_all_results(), active_checklist_id())
+    pipes = [(b.get("pipeline") or {}) for b, _ in latest.values()]
+    n = len(pipes)
+    cost = round(sum(p.get("cost_usd") or 0 for p in pipes), 6)
+    secs = round(sum(p.get("duration_sec") or 0 for p in pipes), 2)
+    models = sorted({p.get("model") for p in pipes if p.get("model")})
+    judge = make_judge()
+    return {
+        "evaluations": n, "aiCostUsd": cost, "avgCostUsd": round(cost / n, 6) if n else 0,
+        "machineSeconds": secs, "avgMs": round(secs * 1000 / n) if n else 0,
+        "llmCalls": sum(p.get("llm_calls") or 0 for p in pipes),
+        "tokens": {"in": sum(p.get("input_tokens") or 0 for p in pipes), "out": sum(p.get("output_tokens") or 0 for p in pipes)},
+        "llmFallbacks": sum(p.get("llm_fallbacks") or 0 for p in pipes),
+        "models": models, "llmConnected": is_llm(judge), "currentModel": judge.model,
+        "llmUsed": any(m != RULES_MODEL for m in models),
+    }
