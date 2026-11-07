@@ -5,7 +5,7 @@
  */
 import { esc, prefersReducedMotion } from './utils.js';
 
-const SPOT = '.cqa-card, .cqa-crit, .cqa-kpi, .cqa-queue__item, .cqa-sec';
+const SPOT = '.cqa-card, .cqa-crit, .cqa-kpi, .cqa-queue__item, .cqa-sec, .cqa-hero__cell, .cqa-savings';
 const MAGNET = '.cqa-btn--primary';
 
 /** Split `.cqa-display` headlines into masked words / rising chars. @param {ParentNode} scope */
