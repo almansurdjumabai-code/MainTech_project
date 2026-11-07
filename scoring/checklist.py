@@ -20,6 +20,7 @@ class Criterion(BaseModel):
     description: str
     rule: Optional[str] = None
     keywords: Optional[list[str]] = None
+    ai_guidance: Optional[str] = None  # подсказка модели из UI — добавляется в промпт критерия
 
     @model_validator(mode="after")
     def _check(self):
@@ -50,6 +51,7 @@ class Checklist(BaseModel):
     version: Optional[int] = None
     name: str
     source: Optional[str] = None
+    note: Optional[str] = None
     rounding: int = 2
     ignore: list[str] = []
     sections: list[Section] = []

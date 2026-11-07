@@ -76,6 +76,11 @@ CREATE TABLE IF NOT EXISTS reviews (
     created_at   TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS llm_cache (
     cache_key    TEXT PRIMARY KEY,
     model        TEXT NOT NULL,
@@ -396,3 +401,29 @@ def insert_review(rid: int, appeal_id: int | None, criterion_id: str, decision: 
             (rid, appeal_id, criterion_id, decision, str(old_value), None if new_value is None else str(new_value), reason, ts))
         return {"review_id": cur.lastrowid, "result_id": rid, "appeal_id": appeal_id, "criterion_id": criterion_id,
                 "decision": decision, "old_value": old_value, "new_value": new_value, "reason": reason, "created_at": ts}
+
+
+def setting_get(key: str, default: Any = None) -> Any:
+    with tx() as c:
+        r = c.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
+    return loads(r["value"]) if r else default
+
+
+def setting_put(key: str, value: Any) -> None:
+    with tx() as c:
+        c.execute("INSERT INTO settings(key, value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                  (key, dumps(value)))
+
+
+def result_rows(where: str = "1=1", args: tuple = ()) -> list[tuple[dict, str, str]]:
+    """(body, created_at, updated_at) — адаптеру фронтенда нужно время оценки. where — только константы из кода."""
+    with tx() as c:
+        rows = c.execute(f"SELECT body, created_at, updated_at FROM results r WHERE {where} ORDER BY created_at, result_id",
+                         args).fetchall()
+    return [(loads(r["body"]), r["created_at"], r["updated_at"]) for r in rows]
+
+
+def checklist_created_at(checklist_id: str) -> str | None:
+    with tx() as c:
+        r = c.execute("SELECT created_at FROM checklists WHERE checklist_id=?", (checklist_id,)).fetchone()
+    return r["created_at"] if r else None
