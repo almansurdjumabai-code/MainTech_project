@@ -1,0 +1,12 @@
+conversation_id,language,channel,labeler,gold_c01,gold_c02,gold_c03,gold_c04,gold_c05,gold_c06,gold_c07,gold_c08,gold_total,model_c01,model_c02,model_c03,model_c04,model_c05,model_c06,model_c07,model_c08,model_total,diff_criteria,why_selected,disputed
+p1-ru-006,RU,agent chat,QA,yes,yes,yes,20,yes,10,yes,no,100,,,,,,,,,,,"Эталон «всё хорошо»: идентификация «Да» через системное сообщение",
+p1-ru-009,RU,agent chat,QA,yes,yes,no,5,no,4,yes,yes,41,,,,,,,,,,,"Идентификация «Нет»: данные счёта раскрыты без проверки",c08
+p1-ru-025,RU,agent chat,QA,yes,yes,na,na,yes,10,na,no,100,,,,,,,,,,,"Клиент ушёл до запроса: консультация и завершение N/A",c02
+p1-ru-029,RU,agent chat,QA,yes,na,na,20,no,4,no,yes,55.38,,,,,,,,,,,"Грубая ошибка: оскорбление",
+p1-kz-005,KZ,agent chat,QA,yes,na,na,20,yes,4,no,no,78.46,,,,,,,,,,,"KZ: ошибочный первый ответ и нет прощания",
+p1-kz-013,KZ,agent chat,QA,yes,na,na,20,yes,10,no,yes,92.31,,,,,,,,,,,"Грубая ошибка при высоком балле: платная частная консультация",
+p1-kz-015,KZ,agent chat,QA,yes,na,no,5,no,7,yes,yes,35.88,,,,,,,,,,,"KZ-аналог ru-009: идентификация «Нет»",c08
+p1-en-009,EN,agent chat,QA,yes,na,na,20,yes,10,na,no,100,,,,,,,,,,,"Соединение потеряно: завершение N/A",
+p1-en-015,EN,agent chat,QA,no,no,na,20,yes,4,no,no,51.25,,,,,,,,,,,"Нет приветствия и представления, не уточнил потребность",
+p4-ru-001,RU,voice call,QA,yes,no,na,10,no,7,na,no,40.67,,,,,,,,,,,"Звонок: недовольный клиент, обрыв по инициативе клиента",c05 c06
+p1-ru-022,RU,agent chat,QA,yes,no,na,0,no,10,no,yes,31.25,,,,,,,,,,,"Грубая ошибка: перевод денег оператору лично",c06

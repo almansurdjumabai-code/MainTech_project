@@ -1,0 +1,10 @@
+# Секреты: ссылки API с sig= и ключи моделей держим только в .env
+.env
+.env.*
+!.env.example
+
+# Данные организаторов (содержат sig= в audio_url) — скачиваются заново через API
+data/
+
+node_modules/
+.DS_Store
