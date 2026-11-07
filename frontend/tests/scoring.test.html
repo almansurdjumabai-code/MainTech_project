@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CQA · scoring tests</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, Consolas, monospace; margin: 32px; background: #fff; color: #0A0F0C; }
+  h1 { font: 500 20px system-ui, sans-serif; }
+  .ok { color: #0F5431; } .fail { color: #B3261E; font-weight: 600; }
+  pre { margin: 2px 0 10px 24px; color: #5A615D; }
+  #summary { margin-top: 16px; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>scoring.js — юнит-тесты</h1>
+<div id="out"></div>
+<div id="summary" data-testid="summary"></div>
+<script type="module">
+import { scoreEvaluation, criterionPoints, validateChecklist, diffChecklists, normalizeAnswer, evaluationAnswers } from '../js/core/scoring.js';
+import { defaultChecklist } from '../js/core/default-checklist.js';
+
+const out = document.getElementById('out');
+let pass = 0, fail = 0;
+const near = (a, b) => (a === null && b === null) || Math.abs(a - b) < 1e-9;
+function test(name, fn) {
+  try { fn(); pass++; out.insertAdjacentHTML('beforeend', `<div class="ok">✓ ${name}</div>`); }
+  catch (e) { fail++; out.insertAdjacentHTML('beforeend', `<div class="fail">✗ ${name}</div><pre>${e.message}</pre>`); }
+}
+function eq(actual, expected, msg = '') {
+  const ok = typeof expected === 'number' || expected === null ? near(actual, expected) : JSON.stringify(actual) === JSON.stringify(expected);
+  if (!ok) throw new Error(`${msg} expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+}
+
+const cl = defaultChecklist();
+const ALL_YES = { c1: 'yes', c2: 'yes', c3: 'yes', c4: 20, c5: 'yes', c6: 10, c7: 'yes', c8: 'no' };
+
+test('Все «Да» и верхние ступени → 100.00', () => {
+  const r = scoreEvaluation(cl, ALL_YES);
+  eq(r.total, 100); eq(r.computable, true); eq(r.gross, false);
+});
+
+test('Все «Нет» и нулевые ступени → 0.00', () => {
+  const r = scoreEvaluation(cl, { c1: 'no', c2: 'no', c3: 'no', c4: 0, c5: 'no', c6: 0, c7: 'no', c8: 'no' });
+  eq(r.total, 0);
+});
+
+test('Часть N/A: вес перераспределяется пропорционально', () => {
+  // applicable: c1(10) c5(15) c6(15) = 40; points 10 + 15 + 10.5 = 35.5 → 88.75
+  const r = scoreEvaluation(cl, { c1: 'yes', c2: 'na', c3: 'na', c4: 'na', c5: 'yes', c6: 7, c7: 'na', c8: 'no' });
+  eq(r.total, 88.75);
+  eq(r.applicableWeight, 40);
+  eq(r.naWeight, 60);
+  const c1 = r.rows.find((x) => x.criterionId === 'c1');
+  eq(c1.effectiveWeight, 25, 'c1 effective weight');
+  const sum = r.rows.reduce((s, x) => s + x.effectiveWeight, 0);
+  eq(Math.round(sum * 1e6) / 1e6, 100, 'effective weights sum');
+});
+
+test('Все критерии N/A → итог не рассчитывается', () => {
+  const allNA = { ...cl, criteria: cl.criteria.filter((c) => c.allowNA) };
+  const r = scoreEvaluation(allNA, { c2: 'na', c3: 'na', c4: 'na', c7: 'na' });
+  eq(r.total, null); eq(r.computable, false);
+});
+
+test('Шкала: points = value / maxStep × weight', () => {
+  const c4 = cl.criteria.find((c) => c.id === 'c4');
+  const c6 = cl.criteria.find((c) => c.id === 'c6');
+  eq(criterionPoints(c4, 15).points, 15);
+  eq(criterionPoints(c4, 5).points, 5);
+  eq(criterionPoints(c6, 7).points, 10.5);
+  eq(criterionPoints(c6, 4).points, 6);
+  eq(criterionPoints(c6, 10).points, 15, 'top step = full weight');
+  const custom = { id: 'x', type: 'scale', weight: 15, scale: [{ value: 10 }, { value: 7 }, { value: 0 }] };
+  eq(criterionPoints(custom, 7).points, 10.5, '7 из 10 при весе 15');
+});
+
+test('Округление до 2 знаков (70.5 / 80 → 88.13)', () => {
+  // 10 + 15 + 15 + 15 + 10.5 + 5 = 70.5 из 80 → 88.125 → 88.13
+  const r = scoreEvaluation(cl, { c1: 'yes', c2: 'yes', c3: 'na', c4: 15, c5: 'yes', c6: 7, c7: 'yes', c8: 'no' });
+  eq(r.total, 88.13);
+});
+
+test('Грубая ошибка при высоком балле: флаг отдельно, балл не обнуляется', () => {
+  const r = scoreEvaluation(cl, { ...ALL_YES, c8: 'yes' });
+  eq(r.total, 100); eq(r.gross, true);
+  const c8 = r.rows.find((x) => x.criterionId === 'c8');
+  eq(c8.points, 0); eq(c8.applicable, false); eq(c8.effectiveWeight, 0);
+});
+
+test('N/A там, где не разрешён → 0 баллов и предупреждение', () => {
+  const c1 = cl.criteria.find((c) => c.id === 'c1');
+  const p = criterionPoints(c1, 'na');
+  eq(p.applicable, true); eq(p.points, 0); eq(p.warning, 'na_not_allowed');
+});
+
+test('Секции: сумма баллов секций = итог', () => {
+  const r = scoreEvaluation(cl, { c1: 'no', c2: 'yes', c3: 'na', c4: 15, c5: 'yes', c6: 7, c7: 'no', c8: 'no' });
+  const sum = r.sections.reduce((s, x) => s + x.points, 0);
+  eq(Math.abs(sum - r.total) < 0.02, true, `sections ${sum} vs total ${r.total}`);
+  eq(r.sections.length, 3, 'flag section excluded');
+});
+
+test('Нормализация ответов (Да / Жоқ / N/A / "15")', () => {
+  eq(normalizeAnswer('Да'), 'yes'); eq(normalizeAnswer('жоқ'), 'no'); eq(normalizeAnswer('N/A'), 'na'); eq(normalizeAnswer('15'), 15);
+});
+
+test('Переопределение проверяющего меняет итог', () => {
+  const ev = { criteria: Object.entries(ALL_YES).map(([criterionId, answer]) => ({ criterionId, answer })), overrides: { c1: { answer: 'no' } } };
+  const { ai, final } = evaluationAnswers(ev);
+  eq(scoreEvaluation(cl, ai).total, 100);
+  eq(scoreEvaluation(cl, final).total, 90);
+});
+
+test('Валидация: сумма весов ≠ 100 → предупреждение', () => {
+  const bad = { ...cl, criteria: cl.criteria.map((c) => (c.id === 'c1' ? { ...c, weight: 20 } : c)) };
+  const v = validateChecklist(bad);
+  eq(v.weightSum, 110); eq(v.issues.some((i) => i.key === 'val.weightSum'), true);
+  eq(validateChecklist(cl).weightSum, 100);
+});
+
+test('Diff версий: изменённый, добавленный и удалённый критерий', () => {
+  const next = { ...cl, criteria: [...cl.criteria.filter((c) => c.id !== 'c7').map((c) => (c.id === 'c1' ? { ...c, weight: 5 } : c)), { id: 'c9', title: 'Новый' }] };
+  const d = diffChecklists(cl, next);
+  eq(d.find((x) => x.id === 'c1').fields, ['weight']);
+  eq(d.some((x) => x.kind === 'added' && x.id === 'c9'), true);
+  eq(d.some((x) => x.kind === 'removed' && x.id === 'c7'), true);
+});
+
+document.getElementById('summary').innerHTML = fail
+  ? `<span class="fail">${fail} упало, ${pass} прошло</span>`
+  : `<span class="ok">Все ${pass} тестов прошли</span>`;
+document.title = (fail ? '✗ ' : '✓ ') + document.title;
+</script>
+</body>
+</html>

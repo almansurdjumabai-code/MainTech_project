@@ -1,0 +1,94 @@
+/* Freedom Broker lockup + intro splash. Everything scoped under .cqa-root, prefix cqa-. */
+
+/* ── Lockup (shared by header and splash; sized in em) ─────────────── */
+.cqa-root .cqa-logo { display: inline-flex; align-items: center; gap: .55em; line-height: 1; color: inherit; }
+.cqa-root .cqa-logo__mark { position: relative; flex: none; width: 2.2em; height: 2.5em; }
+.cqa-root .cqa-logo__mark svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.cqa-root .cqa-logo__stroke { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.cqa-root .cqa-logo__growth { stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; }
+/* Montserrat ExtraBold: closest free match to the geometric grotesk of the Freedom wordmark (round O/D, short R leg). */
+.cqa-root .cqa-logo__word { display: flex; flex-direction: column; gap: .12em; font-family: "Montserrat", "Manrope", var(--cqa-font-sans); font-weight: 800; letter-spacing: -.012em; font-feature-settings: "kern"; text-rendering: geometricPrecision; }
+.cqa-root .cqa-logo__line { display: block; overflow: hidden; white-space: nowrap; padding: .06em 0 .02em; margin: -.06em 0 -.02em; }
+.cqa-root .cqa-logo__line--1 { font-size: 1em; }
+.cqa-root .cqa-logo__line--2 { font-size: .8em; letter-spacing: .005em; }
+.cqa-root .cqa-logo__ch { display: inline-block; }
+
+/* ── Splash: stage ─────────────────────────────────────────────────── */
+.cqa-root .cqa-splash { position: fixed; inset: 0; z-index: 200; cursor: pointer; color: #fff; }
+.cqa-root .cqa-splash__curtain {
+  position: absolute; inset: 0; overflow: hidden; will-change: transform;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 47%, #0B663B 0%, rgba(5, 83, 47, 0) 70%),
+    linear-gradient(180deg, #05532F 0%, #044527 100%);
+  background-color: var(--cqa-brand-bg);
+}
+/* film grain */
+.cqa-root .cqa-splash__curtain::after {
+  content: ""; position: absolute; inset: 0; opacity: .045; pointer-events: none; z-index: 3;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.cqa-root .cqa-splash__vignette { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(ellipse 85% 80% at 50% 50%, transparent 55%, rgba(1, 20, 10, .55) 100%); }
+/* slow aura behind the lockup */
+.cqa-root .cqa-splash__aura {
+  position: absolute; left: 50%; top: 48%; width: min(120vmin, 1100px); aspect-ratio: 1; border-radius: 50%; z-index: 0;
+  background: conic-gradient(from 200deg, transparent 0 18%, rgba(184, 242, 138, .16) 28%, transparent 40% 62%, rgba(81, 175, 61, .22) 74%, transparent 86%);
+  -webkit-mask: radial-gradient(circle, #000 0 30%, transparent 68%); mask: radial-gradient(circle, #000 0 30%, transparent 68%);
+  transform: translate(-50%, -50%); will-change: transform, opacity; filter: blur(48px);
+}
+/* decorative candlestick field */
+.cqa-root .cqa-splash__candles { position: absolute; left: -4%; width: 112%; bottom: 7%; height: 34vh; z-index: 1; opacity: 0; will-change: transform, opacity;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent), linear-gradient(0deg, transparent, #000 40%);
+  mask: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); }
+.cqa-root .cqa-splash__candles line { stroke: rgba(255, 255, 255, .07); stroke-width: 1.2; }
+.cqa-root .cqa-splash__candles rect { fill: rgba(255, 255, 255, .05); }
+.cqa-root .cqa-splash__candles rect.up { fill: rgba(184, 242, 138, .09); }
+/* viewfinder corners */
+.cqa-root .cqa-splash__corner { position: absolute; width: 22px; height: 22px; z-index: 4; border: 0 solid rgba(255, 255, 255, .45); }
+.cqa-root .cqa-splash__corner--tl { top: 28px; left: 28px; border-top-width: 1px; border-left-width: 1px; transform-origin: 0 0; }
+.cqa-root .cqa-splash__corner--tr { top: 28px; right: 28px; border-top-width: 1px; border-right-width: 1px; transform-origin: 100% 0; }
+.cqa-root .cqa-splash__corner--bl { bottom: 28px; left: 28px; border-bottom-width: 1px; border-left-width: 1px; transform-origin: 0 100%; }
+.cqa-root .cqa-splash__corner--br { bottom: 28px; right: 28px; border-bottom-width: 1px; border-right-width: 1px; transform-origin: 100% 100%; }
+/* meta + progress hairline */
+.cqa-root .cqa-splash__meta {
+  position: absolute; left: 64px; right: 64px; bottom: 46px; z-index: 4; display: flex; justify-content: space-between; align-items: baseline;
+  font-family: "Onest", var(--cqa-font-sans); font-size: 13px; font-weight: 500; letter-spacing: -.005em; color: rgba(255, 255, 255, .62);
+}
+.cqa-root .cqa-splash__meta b { font-weight: 600; color: #fff; }
+.cqa-root .cqa-splash__count { display: inline-block; min-width: 2.2ch; text-align: right; font-weight: 600; color: #B8F28A; font-variant-numeric: tabular-nums; }
+.cqa-root .cqa-splash__progress { position: absolute; left: 64px; right: 64px; bottom: 36px; height: 1px; z-index: 4; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.cqa-root .cqa-splash__progress > span { position: absolute; inset: 0; transform-origin: 0 50%; background: linear-gradient(90deg, rgba(184, 242, 138, .2), #B8F28A); }
+.cqa-root .cqa-splash__edge { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; z-index: 4; opacity: 0; background: linear-gradient(90deg, transparent, #B8F28A 30%, #51AF3D 70%, transparent); box-shadow: 0 0 24px 2px rgba(184, 242, 138, .55); }
+
+/* ── Splash: lockup ────────────────────────────────────────────────── */
+.cqa-root .cqa-splash__stage { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 5; }
+.cqa-root .cqa-splash__lockup { position: relative; will-change: transform; }
+.cqa-root .cqa-splash .cqa-logo { font-size: clamp(34px, 6vw, 84px); color: #fff; transform-origin: 0 0; will-change: transform, opacity; }
+.cqa-root .cqa-splash .cqa-logo__fill { will-change: clip-path; filter: drop-shadow(0 18px 40px rgba(0, 0, 0, .25)); }
+.cqa-root .cqa-splash .cqa-logo__word { text-shadow: 0 10px 40px rgba(0, 0, 0, .18); }
+.cqa-root .cqa-splash .cqa-logo__growth { stroke-dashoffset: 1; opacity: 1; }
+.cqa-root .cqa-splash .cqa-logo__ring { transform-box: fill-box; transform-origin: center; opacity: 0; }
+.cqa-root .cqa-splash .cqa-logo__head { filter: drop-shadow(0 0 6px rgba(184, 242, 138, .9)); }
+.cqa-root .cqa-splash__tag {
+  position: absolute; left: calc(2.75 * clamp(34px, 6vw, 84px)); top: calc(100% + .38em); display: flex; align-items: center; gap: 14px;
+  font-size: clamp(34px, 6vw, 84px); white-space: nowrap;
+}
+.cqa-root .cqa-splash__rule { display: block; width: .9em; height: 1.5px; border-radius: 1px; background: #B8F28A; transform-origin: 0 50%; }
+.cqa-root .cqa-splash__tagline {
+  font-family: "Onest", var(--cqa-font-sans); font-weight: 400; font-size: .235em; letter-spacing: -.01em;
+  color: rgba(255, 255, 255, .72); font-feature-settings: "kern";
+}
+.cqa-root .cqa-splash__skip {
+  position: absolute; left: 0; right: 0; bottom: 64px; z-index: 6; text-align: center; opacity: 0;
+  font-family: "Onest", var(--cqa-font-sans); font-size: 13px; font-weight: 500; letter-spacing: -.005em;
+}
+
+/* Reduced motion: static lockup, no chart, then a 300ms fade */
+.cqa-root .cqa-splash--static .cqa-splash__corner, .cqa-root .cqa-splash--static .cqa-splash__progress > span { transform: none; }
+
+@media (max-width: 640px) {
+  .cqa-root .cqa-splash__meta, .cqa-root .cqa-splash__progress { left: 28px; right: 28px; }
+  .cqa-root .cqa-splash__corner { display: none; }
+  .cqa-root .cqa-splash__tag { left: 0; }
+}
+
+.cqa-root .cqa-main:focus-visible { box-shadow: none; }

@@ -1,0 +1,22 @@
+/* Print version of the conversation card. */
+@media print {
+  @page { margin: 14mm; }
+  .cqa-root { background: #fff !important; color: #000 !important; font-size: 11pt; }
+  .cqa-header, .cqa-ticker, .cqa-toasts, .cqa-tour, .cqa-tour-fab, .cqa-no-print,
+  .cqa-crit__actions, .cqa-tabs, .cqa-mobile-tabs, .cqa-player { display: none !important; }
+  .cqa-cardpage { padding: 0 !important; }
+  .cqa-cardpage__grid { display: block !important; }
+  .cqa-cardpage__col { display: flex !important; }
+  .cqa-cardpage__sticky { position: static !important; }
+  .cqa-cardpage__scroll { max-height: none !important; overflow: visible !important; }
+  .cqa-vault, .cqa-second { background: #fff !important; color: #000 !important; box-shadow: inset 0 0 0 1px #999; }
+  .cqa-vault .cqa-eyebrow, .cqa-vault .cqa-muted, .cqa-score__meta, .cqa-score__of { color: #444 !important; }
+  .cqa-gauge__track { stroke: #ddd !important; }
+  .cqa-crit, .cqa-msg { break-inside: avoid; animation: none !important; opacity: 1 !important; }
+  .cqa-msg--operator .cqa-msg__bubble { background: #eef5ec !important; color: #000 !important; }
+  .cqa-calc { display: block; }
+  .cqa-calc > *:not(summary) { display: flex !important; }
+  .cqa-print-only { display: block !important; }
+  a { color: #000 !important; }
+}
+.cqa-print-only { display: none; }
