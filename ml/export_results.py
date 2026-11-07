@@ -39,11 +39,15 @@ def value_of(answer):
     return int(answer)
 
 
-def turns_of(c: dict) -> list[int]:
+def turns_of(c: dict, conv: dict | None = None) -> list[int]:
     idx = [e["index"] for e in (c.get("evidence_all") or []) if isinstance(e, dict) and isinstance(e.get("index"), int)]
     for extra in (c.get("evidence"), c.get("expected_span")):
         if not idx and isinstance(extra, dict) and isinstance(extra.get("index"), int):
             idx = [extra["index"]]
+    if not idx and conv and str(c.get("answer")).upper() == "NA":
+        # N/A без ссылки (так бывает у LLM): ссылаемся на запрос клиента, как в примере приложения
+        first = next((i for i, t in enumerate(conv.get("transcript") or []) if t.get("speaker") == "client"), None)
+        idx = [first] if first is not None else []
     return sorted({i + 1 for i in idx})
 
 
@@ -91,7 +95,7 @@ def record(conv: dict, res: dict | None, checklist: dict, use_final: bool) -> di
                 "error": f"В оценке нет критериев: {', '.join(missing)}."}
     crits = [{"criterion_id": k, "value": value_of(by_code[k]["answer"]),
               "rationale": (by_code[k].get("explanation") or "").strip()[:600],
-              "evidence_turns": turns_of(by_code[k])} for k in ORDER]
+              "evidence_turns": turns_of(by_code[k], conv)} for k in ORDER]
     values = {c["criterion_id"]: c["value"] for c in crits}
     final = block.get("overall")
     check = score_check(values, checklist)
