@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CQA checklist",
+  "type": "object",
+  "required": ["name", "criteria"],
+  "properties": {
+    "id": {"type": "string", "description": "Назначается сервером: {family}-v{version}"},
+    "family": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "version": {"type": "integer", "minimum": 1},
+    "name": {"type": "string"},
+    "rounding": {"type": "integer", "default": 2},
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "criteria"],
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "criteria": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "type", "description"],
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "section": {"type": ["string", "null"]},
+          "type": {"enum": ["binary", "scale", "flag"]},
+          "weight": {"type": "number", "minimum": 0},
+          "scale": {"type": "array", "items": {"type": "integer", "minimum": 0}, "description": "Только для type=scale; верхняя ступень = полный вес"},
+          "scale_descriptions": {"type": "object", "additionalProperties": {"type": "string"}},
+          "na_allowed": {"type": "boolean", "default": false},
+          "na_condition": {"type": ["string", "null"]},
+          "description": {"type": "string", "description": "Формулировка критерия; из неё собирается промпт судьи"},
+          "rule": {"type": ["string", "null"], "description": "Имя встроенного rule-based эвристика (contact, need, identification, consult, empathy, control, close, critical). Для новых критериев не нужен."},
+          "keywords": {"type": "array", "items": {"type": "string"}, "description": "Подсказки для rule-based fallback нового критерия: есть в репликах оператора -> Да/макс."}
+        }
+      }
+    }
+  }
+}

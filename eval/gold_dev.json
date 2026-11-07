@@ -1,0 +1,18 @@
+{
+  "checklist_id": "cqa-default-v1",
+  "group_id": "DEV",
+  "labeled_by": "Claude (черновик по PDF чек-листа) — TODO(hackathon): проверить человеком",
+  "note": "null = спорный случай, в метрику не идёт. C7 с одним прощанием без итога/предложения помощи помечен null.",
+  "labels": {
+    "p1-ru-001": {"C1": "YES", "C2": "NA", "C3": "NA", "C4": 20, "C5": "YES", "C6": 10, "C7": null, "C8": "NO"},
+    "p1-ru-005": {"C1": "YES", "C2": "NA", "C3": "NA", "C4": 20, "C5": "YES", "C6": 4, "C7": "YES", "C8": "NO"},
+    "p1-ru-009": {"C1": "YES", "C2": "YES", "C3": "NO", "C4": 10, "C5": "NO", "C6": 4, "C7": "YES", "C8": null},
+    "p1-ru-013": {"C1": "YES", "C2": "NA", "C3": "NA", "C4": 20, "C5": "YES", "C6": 10, "C7": "YES", "C8": "NO"},
+    "p1-ru-014": {"C1": "NO", "C2": "NO", "C3": "NA", "C4": 20, "C5": "YES", "C6": 7, "C7": null, "C8": "NO"},
+    "p1-ru-023": {"C1": "YES", "C2": "NA", "C3": "NA", "C4": 20, "C5": "YES", "C6": 10, "C7": null, "C8": "YES"},
+    "p1-kz-008": {"C1": "NO", "C2": "NO", "C3": "NA", "C4": 20, "C5": "YES", "C6": 7, "C7": "NO", "C8": "NO"},
+    "p1-kz-015": {"C1": "YES", "C2": "NA", "C3": "NO", "C4": 10, "C5": null, "C6": null, "C7": "YES", "C8": null},
+    "p1-en-013": {"C1": "YES", "C2": "NA", "C3": "NA", "C4": 20, "C5": "YES", "C6": 10, "C7": "NO", "C8": "YES"},
+    "p1-en-015": {"C1": "NO", "C2": "NO", "C3": "NA", "C4": null, "C5": null, "C6": null, "C7": null, "C8": "NO"}
+  }
+}
