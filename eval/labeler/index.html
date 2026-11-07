@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CQA разметка</title>
+<style>
+  :root {
+    --bg: #f6f7f5; --panel: #ffffff; --ink: #1c2420; --muted: #66706b; --line: #dfe3e0;
+    --accent: #14563a; --accent-soft: #e3efe8; --ok: #1f7a4a; --bad: #b4322a; --warn: #a86a00;
+    --op: #e8f1ff; --cl: #f3f3f3; --sys: transparent; --focus: #fff4c2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121614; --panel: #1b201e; --ink: #e6ebe8; --muted: #9aa49f; --line: #2c3431;
+      --accent: #6fd3a0; --accent-soft: #1f3329; --ok: #6fd3a0; --bad: #ff8a80; --warn: #f0b44c;
+      --op: #1d2a3d; --cl: #242a28; --focus: #4a4220;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { font-size: 16px; margin: 0 8px 0 0; }
+  header .grow { flex: 1; }
+  input, select, textarea, button { font: inherit; color: inherit; }
+  input[type=text], select, textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+  button { cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--panel); border-radius: 6px; padding: 6px 14px; font-weight: 600; }
+  button.ghost { background: transparent; color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .progress { color: var(--muted); }
+  main { display: grid; grid-template-columns: 230px minmax(320px, 1fr) minmax(360px, 1.1fr); height: calc(100vh - 52px); }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; height: auto; } }
+  section { overflow: auto; padding: 12px 14px; border-right: 1px solid var(--line); }
+  .list a { display: flex; justify-content: space-between; gap: 6px; padding: 6px 8px; border-radius: 6px; color: inherit; text-decoration: none; }
+  .list a:hover { background: var(--accent-soft); }
+  .list a.active { background: var(--accent-soft); font-weight: 600; }
+  .tag { font-size: 11px; color: var(--muted); }
+  .done { color: var(--ok); }
+  .turn { padding: 6px 9px; margin: 5px 0; border-radius: 8px; border-left: 3px solid transparent; }
+  .turn.operator { background: var(--op); }
+  .turn.client { background: var(--cl); }
+  .turn.bot, .turn.system { color: var(--muted); font-size: 13px; }
+  .turn.focus { background: var(--focus); border-left-color: var(--warn); }
+  .turn .h { font-size: 11px; color: var(--muted); display: flex; gap: 8px; }
+  .turn .h a { color: var(--accent); }
+  .crit { border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; margin: 8px 0; background: var(--panel); }
+  .crit h3 { margin: 0 0 3px; font-size: 14px; }
+  .crit p { margin: 2px 0; color: var(--muted); font-size: 12.5px; }
+  .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .opts label { border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; cursor: pointer; user-select: none; }
+  .opts input { display: none; }
+  .opts input:checked + span { font-weight: 700; color: var(--accent); }
+  .opts label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .unsure { font-style: italic; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 5px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .m-ok { color: var(--ok); font-weight: 700; } .m-bad { color: var(--bad); font-weight: 700; }
+  .flag { color: var(--warn); font-size: 12px; }
+  .big { font-size: 22px; font-weight: 700; }
+  .note { background: var(--accent-soft); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+  .err { color: var(--bad); }
+  audio { width: 100%; margin: 6px 0 10px; }
+</style>
+</head>
+<body>
+<div id="cqa-labeler">
+<header>
+  <h1>CQA · слепая разметка</h1>
+  <select id="mode" aria-label="Режим">
+    <option value="split">Тестовый сплит</option>
+    <option value="all">Все диалоги (просмотр)</option>
+  </select>
+  <span class="progress" id="progress"></span>
+  <span class="grow"></span>
+  <label>Разметчик <input type="text" id="labeler" placeholder="имя" size="14"></label>
+</header>
+<main>
+  <section class="list" id="list"></section>
+  <section id="transcript"><p class="tag">Выберите диалог слева.</p></section>
+  <section id="side"></section>
+</main>
+</div>
+<script>
+const API = "";  // тот же origin, что и backend (http://127.0.0.1:8000)
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const LABEL = {YES: "Да", NO: "Нет", NA: "N/A"};
+const lab = (v) => v === null || v === undefined ? "не уверен" : (LABEL[v] ?? `${v}`);
+const ROLE = {operator: "оператор", client: "клиент", bot: "бот", system: "система"};
+const state = {split: null, checklist: null, all: [], current: null, conv: null};
+
+async function api(path, opts) {
+  const r = await fetch(API + path, opts);
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(body.detail || r.statusText), {status: r.status});
+  return body;
+}
+
+try { $("labeler").value = localStorage.getItem("cqa-labeler") || ""; } catch (e) {}
+$("labeler").addEventListener("input", () => { try { localStorage.setItem("cqa-labeler", $("labeler").value); } catch (e) {} });
+$("mode").addEventListener("change", renderList);
+
+async function init() {
+  state.split = await api("/labeling/split");
+  state.checklist = await api(`/checklists/${state.split.checklist_id}`);
+  state.all = (await api(`/conversations?group_id=${encodeURIComponent(state.split.group_id)}`)).items;
+  renderList();
+}
+
+function inSplit(cid) { return state.split.items.some((i) => i.conversation_id === cid); }
+function isLabeled(cid) { return state.split.items.some((i) => i.conversation_id === cid && i.labeled); }
+
+function renderList() {
+  const s = state.split;
+  $("progress").textContent = `размечено ${s.labeled} из ${s.total}`;
+  const items = $("mode").value === "split"
+    ? s.items.map((i) => ({id: i.conversation_id, lang: i.language, ch: i.channel, done: i.labeled}))
+    : state.all.map((c) => ({id: c.conversation_id, lang: c.language, ch: c.channel, done: isLabeled(c.conversation_id), split: inSplit(c.conversation_id)}));
+  $("list").innerHTML = items.map((i) => `
+    <a href="#" data-id="${esc(i.id)}" class="${state.current === i.id ? "active" : ""}">
+      <span>${esc(i.id)} ${i.split ? '<span class="tag">тест</span>' : ""}</span>
+      <span class="tag">${esc(i.lang || "")}${i.ch === "voice call" ? " · звонок" : ""} ${i.done ? '<span class="done">✓</span>' : ""}</span>
+    </a>`).join("");
+  $("list").querySelectorAll("a").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); open(a.dataset.id); }));
+}
+
+async function open(cid) {
+  state.current = cid;
+  renderList();
+  state.conv = await api(`/conversations/${encodeURIComponent(cid)}`);
+  renderTranscript();
+  if (inSplit(cid) && !isLabeled(cid)) renderForm();
+  else renderCompare();
+}
+
+function renderTranscript() {
+  const c = state.conv;
+  const audio = c.audio_stream_url ? `<audio id="player" controls preload="none" src="${API}${esc(c.audio_stream_url)}"></audio>` : "";
+  $("transcript").innerHTML = `
+    <div class="tag">${esc(c.conversation_id)} · ${esc(c.language)} · ${esc(c.channel)} · ${c.transcript.length} реплик</div>
+    ${audio}
+    ${c.transcript.map((t) => `
+      <div class="turn ${esc(t.speaker)}" id="turn-${t.index}">
+        <div class="h"><span>#${t.index}</span><span>${esc(ROLE[t.speaker] || t.speaker)}</span>
+          ${t.offset_sec !== null && c.audio_stream_url ? `<a href="#" data-seek="${t.offset_sec}">▶ ${esc(t.timestamp)}</a>` : `<span>${esc(t.timestamp)}</span>`}
+        </div>${esc(t.text)}</div>`).join("")}`;
+  $("transcript").querySelectorAll("[data-seek]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); seek(+a.dataset.seek); }));
+}
+
+function seek(sec) {
+  const p = $("player");
+  if (!p) return;
+  p.currentTime = sec;
+  p.play().catch(() => {});
+}
+
+function focusTurn(ev) {
+  if (!ev || ev.index === undefined || ev.index === null) return;
+  document.querySelectorAll(".turn.focus").forEach((n) => n.classList.remove("focus"));
+  const n = $(`turn-${ev.index}`);
+  if (n) { n.classList.add("focus"); n.scrollIntoView({behavior: "smooth", block: "center"}); }
+  if (ev.offset_sec !== null && ev.offset_sec !== undefined) seek(ev.offset_sec);
+}
+
+function options(crit) {
+  const vals = crit.type === "scale" ? [...crit.scale].sort((a, b) => b - a).map(String) : ["YES", "NO"];
+  if (crit.na_allowed) vals.push("NA");
+  return vals;
+}
+
+function renderForm() {
+  const crits = state.checklist.criteria;
+  $("side").innerHTML = `
+    <div class="note">Разметка вслепую: оценка системы появится после сохранения. Оценивайте только оператора; бот и система — контекст.
+      «Нет» — действие было нужно, но пропущено; N/A — только если выполнено условие неприменимости.</div>
+    <form id="lf">
+      ${crits.map((c) => `
+        <div class="crit">
+          <h3>${esc(c.id)} · ${esc(c.name)} <span class="tag">${c.type === "flag" ? "грубая ошибка" : "вес " + c.weight}</span></h3>
+          <p>${esc(c.description)}</p>
+          ${c.scale_descriptions ? `<p>${Object.entries(c.scale_descriptions).sort((a, b) => b[0] - a[0]).map(([k, v]) => `<b>${esc(k)}</b> — ${esc(v)}`).join("<br>")}</p>` : ""}
+          ${c.na_allowed ? `<p>N/A: ${esc(c.na_condition)}</p>` : ""}
+          <div class="opts">
+            ${options(c).map((v) => `<label><input type="radio" name="${esc(c.id)}" value="${esc(v)}"><span>${esc(lab(v))}</span></label>`).join("")}
+            <label class="unsure"><input type="radio" name="${esc(c.id)}" value="__null"><span>не уверен</span></label>
+          </div>
+        </div>`).join("")}
+      <p><textarea id="notes" rows="2" style="width:100%" placeholder="Комментарий (необязательно)"></textarea></p>
+      <p><button type="submit" id="save">Сохранить разметку</button> <span id="formerr" class="err"></span></p>
+    </form>`;
+  $("lf").addEventListener("submit", save);
+}
+
+async function save(e) {
+  e.preventDefault();
+  const name = $("labeler").value.trim();
+  if (!name) { $("formerr").textContent = "Укажите имя разметчика вверху."; return; }
+  const labels = {};
+  for (const c of state.checklist.criteria) {
+    const v = document.querySelector(`input[name="${CSS.escape(c.id)}"]:checked`);
+    if (!v) { $("formerr").textContent = `Нет ответа по ${c.id} (можно «не уверен»).`; return; }
+    labels[c.id] = v.value === "__null" ? null : v.value;
+  }
+  $("save").disabled = true;
+  try {
+    await api(`/labeling/labels/${encodeURIComponent(state.current)}`, {
+      method: "PUT", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({labels, labeler: name, notes: $("notes").value}),
+    });
+    state.split = await api("/labeling/split");
+    renderList();
+    renderCompare();
+  } catch (err) {
+    $("formerr").textContent = err.message;
+    $("save").disabled = false;
+  }
+}
+
+async function renderCompare() {
+  let d;
+  try { d = await api(`/labeling/compare/${encodeURIComponent(state.current)}`); }
+  catch (err) { $("side").innerHTML = `<p class="err">${esc(err.message)}</p>`; return; }
+  if (!d.has_result) {
+    $("side").innerHTML = `<p>Автооценки ещё нет. Запустите <code>POST /evaluate</code> для ${esc(d.conversation_id)}.</p>`;
+    return;
+  }
+  const human = !!d.human;
+  const matched = d.rows.filter((r) => r.match === true).length, compared = d.rows.filter((r) => r.match !== null).length;
+  $("side").innerHTML = `
+    <div><span class="big">${d.overall ?? "—"}</span> / 100 ${d.critical_error ? '<span class="m-bad">· грубая ошибка</span>' : ""}
+      <span class="tag">· судья: ${esc(d.judge)}</span></div>
+    ${human ? `<p>Совпадение с вашей разметкой: <b>${matched} из ${compared}</b> ${d.meta ? `<span class="tag">· ${esc(d.meta.labeler)}</span>` : ""}</p>` : ""}
+    <p class="tag">${(d.sections || []).filter((s) => s.percent !== null).map((s) => `${esc(s.name)}: ${s.percent}%`).join(" · ")}</p>
+    <table>
+      <tr><th>Критерий</th>${human ? "<th>Вы</th>" : ""}<th>Система</th><th>Баллы</th></tr>
+      ${d.rows.map((r) => `
+        <tr>
+          <td><b>${esc(r.id)}</b> ${esc(r.name)}
+            ${r.needs_review ? `<div class="flag">⚑ на проверку: ${esc((r.review_reasons || []).join(", "))}</div>` : ""}
+            <div class="tag">${esc(r.explanation)}</div>
+            ${r.evidence ? `<a href="#" data-ev='${esc(JSON.stringify(r.evidence))}'>→ к реплике #${r.evidence.index}</a>` : ""}
+          </td>
+          ${human ? `<td>${esc(lab(r.human))}</td>` : ""}
+          <td class="${r.match === true ? "m-ok" : r.match === false ? "m-bad" : ""}">${esc(lab(r.system))}${r.match === true ? " ✓" : r.match === false ? " ✗" : ""}</td>
+          <td>${r.points ?? "—"}<div class="tag">из ${r.effective_weight}</div></td>
+        </tr>`).join("")}
+    </table>`;
+  $("side").querySelectorAll("[data-ev]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); focusTurn(JSON.parse(a.dataset.ev)); }));
+}
+
+init().catch((err) => { $("list").innerHTML = `<p class="err">API недоступен: ${esc(err.message)}</p>`; });
+</script>
+</body>
+</html>

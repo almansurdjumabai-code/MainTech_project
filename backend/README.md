@@ -48,6 +48,8 @@ Rule-based сейчас совпадает с этой разметкой на 9
 
 Материалы для защиты (архитектура, evaluation, стоимость, сценарии, ограничения, матрица требований): [docs/demo/](docs/demo/README.md).
 
+Независимая разметка: http://127.0.0.1:8000/labeler/ (слепая, 18 диалогов из `eval/split_test.json` → `eval/gold_human.json`).
+
 Живая проверка Claude API (центы): `backend\.venv\Scripts\python -m ml.live_smoke`. Сравнение режимов: `python -m eval.run_eval --modes rules,hybrid,llm_only --out backend/docs/demo/eval_results`.
 
 План на остаток хакатона и промпт для ассистента любого участника команды: [HACKATHON_PROMPT.md](HACKATHON_PROMPT.md).

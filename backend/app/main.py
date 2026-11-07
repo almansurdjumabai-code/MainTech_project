@@ -10,11 +10,12 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 from ml.judges import make_judge
 from scoring.checklist import Checklist
 
-from . import audio, config, db, service
+from . import audio, config, db, labeling, service
 from .ingest import IngestError, ingest_group
 from .schemas import AppealIn, BatchIn, EvaluateIn, ReviewIn
 
@@ -32,6 +33,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="CQA backend", version="0.1.0", lifespan=lifespan)
+app.include_router(labeling.router)
+# Инструмент слепой разметки тестового сплита (eval), не продуктовый UI: http://127.0.0.1:8000/labeler/
+app.mount("/labeler", StaticFiles(directory=config.ROOT / "eval" / "labeler", html=True), name="labeler")
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=config.CORS_ORIGIN_REGEX,
