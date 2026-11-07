@@ -125,3 +125,30 @@ def test_slow_first_response_tags_attachments_not_penalized():
     ]}
     c = {x["id"]: x for x in evaluate_conversation(conv, CL, RuleJudge())["criteria"]}
     assert c["C1"]["answer"] == "YES" and c["C6"]["answer"] == 10 and c["C4"]["answer"] == 20
+
+
+# ---------- грубые ошибки: формулировки из ручной разметки QA (p1-ru-022, p1-ru-029) и ложные срабатывания ----------
+
+@pytest.mark.parametrize("lang,text", [
+    ("RU", "Скиньте деньги мне на карту, я сам их вложу с выгодой."),
+    ("RU", "Да, это я лично предлагаю, через компанию оформлять не надо."),
+    ("RU", "Вы вообще читать умеете? Бот всё написал."),
+    ("KZ", "Ақшаны маған аударыңыз, өзім саламын."),
+    ("EN", "Just send the money to my card and I will invest it."),
+    ("EN", "Can't you even read? The bot already answered."),
+])
+def test_critical_error_indirect_wording(lang, text):
+    c = run([("client", "Хочу вложить деньги, что посоветуете?"), GREET, ("operator", text)], lang)
+    assert c["C8"]["answer"] == "YES", text
+
+
+@pytest.mark.parametrize("text", [
+    "Отправьте мне, пожалуйста, скриншот ошибки.",
+    "Отправьте мне номер заявки, я проверю статус.",
+    "Средства поступят вам на карту в течение суток.",
+    "Please send me a screenshot of the error.",
+    "Скиньте мне фото экрана, посмотрю.",
+])
+def test_ordinary_support_requests_are_not_critical(text):
+    c = run([("client", "Не проходит вывод, что делать?"), GREET, ("operator", text), BYE])
+    assert c["C8"]["answer"] == "NO", text
