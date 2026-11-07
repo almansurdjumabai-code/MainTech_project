@@ -1,0 +1,34 @@
+/* Motion — transform/opacity only. All disabled under prefers-reduced-motion. */
+@keyframes cqa-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cqa-pop-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes cqa-toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes cqa-toast-out { to { opacity: 0; transform: translateY(8px) scale(.98); } }
+@keyframes cqa-ledger-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes cqa-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+@keyframes cqa-ticker { to { transform: translateX(-50%); } }
+@keyframes cqa-spin { to { transform: rotate(360deg); } }
+@keyframes cqa-draw { to { stroke-dashoffset: 0; } }
+@keyframes cqa-scan { 0% { top: 0; opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+@keyframes cqa-read-blink { 0% { opacity: .45; } 40% { opacity: 1; transform: translateX(2px); } 100% { opacity: 1; transform: none; } }
+@keyframes cqa-pulse-green { 0% { box-shadow: 0 0 0 0 rgba(81, 175, 61, .65); } 100% { box-shadow: 0 0 0 10px rgba(81, 175, 61, 0); } }
+@keyframes cqa-mark-in { to { background-size: 100% 100%; } }
+@keyframes cqa-ring-once { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.9); opacity: 0; } }
+@keyframes cqa-breathe { 50% { opacity: .55; } }
+@keyframes cqa-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes cqa-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes cqa-flip-out { to { transform: perspective(900px) rotateY(90deg); opacity: .6; } }
+@keyframes cqa-flip-in { from { transform: perspective(900px) rotateY(-90deg); opacity: .6; } to { transform: none; opacity: 1; } }
+@keyframes cqa-slide-in-right { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+@keyframes cqa-attention { 0%, 100% { box-shadow: 0 0 0 0 rgba(81, 175, 61, 0); } 50% { box-shadow: 0 0 0 6px rgba(81, 175, 61, .3); } }
+@keyframes cqa-coach { 50% { outline-color: rgba(81, 175, 61, .35); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cqa-root *, .cqa-root *::before, .cqa-root *::after {
+    animation-duration: 1ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
+    transition-duration: 1ms !important; scroll-behavior: auto !important;
+  }
+  .cqa-root .cqa-ticker__track { animation: none !important; padding-left: 16px; }
+  .cqa-root .cqa-ticker__group + .cqa-ticker__group { display: none; }
+  .cqa-root .cqa-transcript__scan { display: none; }
+  .cqa-root .cqa-skel { animation: none !important; }
+}

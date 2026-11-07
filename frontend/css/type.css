@@ -1,0 +1,120 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   TYPE — the product's type system (loaded after luxe.css, before splash.css).
+   One confident grotesk (Onest) with real weights and tight tracking, like a banking app:
+   no hairline display, no italic serif, no letter-spaced mono caps. Mono only for IDs, time, code, math.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.cqa-root {
+  font-family: var(--cqa-font-sans); font-size: 15px; font-weight: 400; line-height: 1.5;
+  letter-spacing: -.011em; font-feature-settings: "kern", "calt";
+}
+.cqa-root :where(button, input, select, textarea) { letter-spacing: inherit; }
+
+/* Figures are always tabular where they are compared */
+.cqa-root :is(.cqa-num, .cqa-score__num, .cqa-kpi__val, .cqa-preview__num, .cqa-batch__count, .cqa-result-swap__new, .cqa-result-swap__old,
+  .cqa-sec__val, .cqa-weight-ring__val, .cqa-crit__pts, .cqa-score-cell, .cqa-heat__cell, .cqa-player__time, .cqa-delta, .cqa-ticker__item b) {
+  font-variant-numeric: tabular-nums; font-feature-settings: "kern", "tnum";
+}
+
+/* ── Headlines ─────────────────────────────────────────────────────── */
+/* Big page headlines: thin, wide, expensive (Unbounded 300). Everything else stays on dense Onest. */
+.cqa-root .cqa-display {
+  font-family: "Unbounded", var(--cqa-font-display); font-weight: 300; font-size: clamp(48px, 6.6vw, 104px);
+  letter-spacing: -.06em; line-height: .92;
+}
+.cqa-root .cqa-display::after { color: var(--cqa-green); margin-left: .02em; }
+.cqa-root .cqa-h2 { font-family: var(--cqa-font-display); font-weight: 650; font-size: 28px; letter-spacing: -.04em; line-height: 1.1; }
+.cqa-root .cqa-h3 { font-family: var(--cqa-font-display); font-weight: 600; font-size: 17px; letter-spacing: -.022em; line-height: 1.3; }
+.cqa-root .cqa-lead {
+  font-family: var(--cqa-font-sans); font-style: normal; font-weight: 400; font-size: 19px; line-height: 1.45;
+  letter-spacing: -.018em; color: var(--cqa-graphite); max-width: 56ch; font-feature-settings: "kern";
+}
+.cqa-root .cqa-serif { font-family: var(--cqa-font-sans); font-style: normal; font-weight: 600; }
+
+/* Labels: sentence case, real weight, no letter-spaced caps */
+.cqa-root .cqa-eyebrow {
+  font-family: var(--cqa-font-sans); font-size: 13px; font-weight: 600; letter-spacing: -.008em;
+  text-transform: none; color: var(--cqa-graphite);
+}
+.cqa-root .cqa-page__title .cqa-eyebrow { color: var(--cqa-green-text); font-size: 14px; }
+.cqa-root .cqa-page__title .cqa-eyebrow::before { width: 28px; height: 2px; border-radius: 2px; }
+.cqa-root .cqa-vault .cqa-eyebrow, .cqa-root .cqa-kpi--vault .cqa-eyebrow, .cqa-root .cqa-second .cqa-eyebrow, .cqa-root .cqa-tour .cqa-eyebrow { color: var(--cqa-vault-mute); }
+.cqa-root .cqa-field__label { font-family: var(--cqa-font-sans); font-size: 13px; font-weight: 600; letter-spacing: -.008em; text-transform: none; color: var(--cqa-graphite); }
+.cqa-root .cqa-field__hint { font-size: 12.5px; }
+.cqa-root :is(.cqa-table th, .cqa-compare__row--head, .cqa-kv__k, .cqa-heat__head) {
+  font-family: var(--cqa-font-sans); font-size: 12.5px; font-weight: 600; letter-spacing: -.005em; text-transform: none;
+}
+.cqa-root .cqa-table th { color: var(--cqa-mute); }
+.cqa-root .cqa-kv__k { color: var(--cqa-vault-mute); }
+
+/* ── Navigation, chrome ────────────────────────────────────────────── */
+.cqa-root .cqa-nav__link { font-weight: 600; font-size: 14px; letter-spacing: -.015em; }
+.cqa-root .cqa-seg__btn { font-weight: 600; font-size: 13px; letter-spacing: -.01em; }
+.cqa-root .cqa-source { font-family: var(--cqa-font-sans); font-size: 12.5px; font-weight: 600; letter-spacing: -.005em; }
+.cqa-root .cqa-nav__count { font-family: var(--cqa-font-sans); font-weight: 700; font-size: 11.5px; letter-spacing: 0; }
+.cqa-root .cqa-ticker__track { font-family: var(--cqa-font-sans); font-size: 13px; font-weight: 500; letter-spacing: -.01em; }
+.cqa-root .cqa-ticker__item b { font-family: var(--cqa-font-sans); font-weight: 700; letter-spacing: -.02em; }
+.cqa-root .cqa-tab { font-family: var(--cqa-font-sans); font-size: 14px; font-weight: 600; letter-spacing: -.015em; }
+.cqa-root .cqa-btn { font-family: var(--cqa-font-sans); font-weight: 600; letter-spacing: -.012em; }
+.cqa-root .cqa-badge { font-weight: 600; letter-spacing: -.005em; }
+.cqa-root .cqa-badge--mono { font-family: var(--cqa-font-sans); font-size: 11.5px; font-weight: 700; letter-spacing: .02em; }
+.cqa-root .cqa-answer { font-weight: 650; letter-spacing: -.01em; }
+.cqa-root .cqa-toast__title { font-weight: 650; letter-spacing: -.015em; }
+.cqa-root .cqa-toast__msg { font-family: var(--cqa-font-sans); font-size: 13px; font-weight: 500; }
+.cqa-root .cqa-modal .cqa-h3 { font-family: var(--cqa-font-display); font-weight: 650 !important; font-size: 23px !important; letter-spacing: -.035em; }
+
+/* ── Numbers: heavy, tight, tabular ────────────────────────────────── */
+.cqa-root :is(.cqa-score__num, .cqa-kpi__val, .cqa-preview__num, .cqa-batch__count, .cqa-result-swap__new, .cqa-sec__val, .cqa-weight-ring__val, .cqa-crit__pts, .cqa-score-cell) {
+  font-family: var(--cqa-font-display); font-weight: 650; letter-spacing: -.045em;
+}
+.cqa-root .cqa-score__num { font-size: 54px; }
+.cqa-root .cqa-kpi__val { font-size: 50px; }
+.cqa-root .cqa-preview__num { font-size: 44px; }
+.cqa-root .cqa-sec__val { font-size: 26px; }
+.cqa-root .cqa-crit__pts { font-size: 19px; }
+.cqa-root .cqa-crit__pts small, .cqa-root .cqa-sec__val small { font-family: var(--cqa-font-sans); font-weight: 500; letter-spacing: -.005em; }
+.cqa-root .cqa-score-cell { font-size: 16px; }
+.cqa-root .cqa-batch__count small, .cqa-root .cqa-kpi__val .cqa-mute { font-weight: 500; }
+.cqa-root .cqa-odo__col { width: .63em; }
+.cqa-root .cqa-odo__sep { width: .27em; }
+.cqa-root .cqa-score__title { font-family: var(--cqa-font-display); font-weight: 650; font-size: 25px; letter-spacing: -.035em; }
+.cqa-root :is(.cqa-score__of, .cqa-score__meta) { font-family: var(--cqa-font-sans); font-size: 12.5px; font-weight: 500; letter-spacing: -.005em; }
+.cqa-root .cqa-score__of { font-weight: 600; }
+
+/* ── Ledger / editor numbering: quiet, solid (no outline-stroke gimmick) ─ */
+.cqa-root :is(.cqa-crit__num, .cqa-item__num) {
+  font-family: var(--cqa-font-sans); font-size: 13px; font-weight: 700; letter-spacing: -.01em;
+  color: var(--cqa-mute); -webkit-text-stroke: 0; font-variant-numeric: tabular-nums;
+}
+.cqa-root .cqa-crit:hover .cqa-crit__num, .cqa-root .cqa-crit.is-focused .cqa-crit__num { color: var(--cqa-green-text); }
+.cqa-root .cqa-crit__title { font-family: var(--cqa-font-sans); font-weight: 650; font-size: 15.5px; letter-spacing: -.022em; }
+.cqa-root .cqa-crit__sub { font-size: 12.5px; font-weight: 500; }
+.cqa-root .cqa-crit__expl { font-size: 14.5px; line-height: 1.55; }
+.cqa-root .cqa-item__title { font-family: var(--cqa-font-sans); font-weight: 650; font-size: 14.5px; letter-spacing: -.02em; }
+.cqa-root .cqa-version__v { font-family: var(--cqa-font-sans); font-weight: 700; font-size: 15px; letter-spacing: -.02em; }
+.cqa-root .cqa-evidence { font-size: 13px; }
+.cqa-root .cqa-evidence__q { font-style: normal; }
+.cqa-root .cqa-evidence__idx { font-family: var(--cqa-font-sans); font-weight: 700; font-size: 11.5px; }
+.cqa-root .cqa-calc__step::before { font-family: var(--cqa-font-sans); font-weight: 700; font-size: 12px; }
+.cqa-root :is(.cqa-stack__seg, .cqa-stack-legend) { font-family: var(--cqa-font-sans); font-weight: 600; font-size: 11.5px; }
+
+/* ── Transcript ────────────────────────────────────────────────────── */
+.cqa-root .cqa-msg__meta { font-family: var(--cqa-font-sans); font-size: 12px; font-weight: 500; gap: 8px; }
+.cqa-root .cqa-msg__who { text-transform: none; letter-spacing: -.005em; font-weight: 650; color: var(--cqa-graphite); }
+.cqa-root .cqa-msg__meta time, .cqa-root .cqa-msg__idx { font-family: var(--cqa-font-mono); font-size: 11px; }
+.cqa-root .cqa-msg__bubble { font-size: 14.5px; letter-spacing: -.01em; }
+.cqa-root .cqa-msg--system .cqa-msg__bubble { font-family: var(--cqa-font-sans); font-size: 12.5px; font-weight: 500; }
+
+/* ── Card / player / dashboard bits ────────────────────────────────── */
+.cqa-root .cqa-cardpage__id { font-family: var(--cqa-font-sans); font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
+.cqa-root :is(.cqa-player__time, .cqa-proc__time) { font-family: var(--cqa-font-sans); font-weight: 600; font-size: 12.5px; }
+.cqa-root .cqa-chart text { font-family: var(--cqa-font-sans); font-size: 12px; font-weight: 500; }
+.cqa-root .cqa-chart .cqa-chart__val { font-weight: 700; }
+.cqa-root .cqa-heat__cell { font-family: var(--cqa-font-sans); font-size: 13px; font-weight: 650; }
+.cqa-root .cqa-hbar { font-size: 13.5px; font-weight: 500; }
+.cqa-root .cqa-kpi__sub { font-size: 13px; font-weight: 500; }
+.cqa-root .cqa-sec__name { font-size: 13px; font-weight: 600; letter-spacing: -.012em; }
+.cqa-root .cqa-proc__step { font-weight: 600; }
+.cqa-root .cqa-queue__comment { font-size: 13.5px; }
+.cqa-root .cqa-quote { font-size: 14.5px; }
+.cqa-root .cqa-flow__step { font-weight: 600; font-size: 13px; }

@@ -1,0 +1,87 @@
+/* Design tokens — scoped to .cqa-root so nothing leaks into a Dynamics 365 host.
+   Direction: "private banking × editorial" — warm paper, forest ink, Freedom green as light. */
+.cqa-root {
+  --cqa-paper: #F6F5EF;          /* warm paper canvas */
+  --cqa-surface: #FFFFFF;        /* raised surfaces */
+  --cqa-ink: #07120C;
+  --cqa-graphite: #4E5751;
+  --cqa-mute: #67706A;           /* AA on paper */
+  --cqa-mist: #ECEFE7;
+  --cqa-mist-2: #E1E7DC;
+  --cqa-line: rgba(7, 18, 12, .09);
+  --cqa-line-strong: rgba(7, 18, 12, .16);
+  --cqa-green: #51AF3D;
+  --cqa-lime: #B8F28A;           /* glow highlight */
+  --cqa-green-deep: #0F5431;
+  --cqa-green-text: #0F5431;
+  /* Brand background sampled from the official logo; a touch more saturated than --cqa-green-deep (#0F5431). */
+  --cqa-brand-bg: #05532F;
+  --cqa-vault: #04100A;
+  --cqa-vault-grad:
+    radial-gradient(120% 140% at 100% 0%, rgba(81, 175, 61, .38) 0%, transparent 46%),
+    radial-gradient(90% 120% at 0% 100%, rgba(15, 84, 49, .9) 0%, transparent 60%),
+    linear-gradient(160deg, #03100A 0%, #072215 55%, #0A2E1C 100%);
+  --cqa-vault-ink: #F1F7EF;
+  --cqa-vault-mute: #93AE9C;
+  --cqa-vault-line: rgba(255, 255, 255, .1);
+  --cqa-mint: #E2F3DA;
+  --cqa-amber: #B27B00;
+  --cqa-amber-text: #7E5600;
+  --cqa-amber-soft: #F8EDD0;
+  --cqa-red: #B3261E;
+  --cqa-red-soft: #F9E3E0;
+  --cqa-focus: 0 0 0 3px rgba(81, 175, 61, .4);
+  --cqa-hatch: repeating-linear-gradient(135deg, rgba(178, 123, 0, .18) 0 4px, transparent 4px 8px);
+  --cqa-glass: rgba(255, 255, 255, .62);
+  --cqa-glass-line: rgba(255, 255, 255, .7);
+  --cqa-shadow-soft: 0 1px 0 rgba(255, 255, 255, .8) inset, 0 20px 50px -28px rgba(7, 40, 22, .35);
+  --cqa-shadow-float: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -18px rgba(7, 40, 22, .35), 0 2px 6px rgba(7, 40, 22, .06);
+
+  /* One confident grotesk for the whole product (Onest: Cyrillic incl. Kazakh); mono only for IDs/time/code. */
+  --cqa-font-display: "Onest", "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --cqa-font-sans: "Onest", "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --cqa-font-serif: var(--cqa-font-sans);
+  --cqa-font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --cqa-features: "kern", "calt";
+
+  --cqa-r-card: 22px;
+  --cqa-r-media: 28px;
+  --cqa-r-pill: 9999px;
+  --cqa-r-sm: 12px;
+
+  --cqa-ease: cubic-bezier(.2, .8, .2, 1);
+  --cqa-expo: cubic-bezier(.16, 1, .3, 1);
+  --cqa-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --cqa-t-fast: 160ms;
+  --cqa-t: 280ms;
+  --cqa-t-slow: 700ms;
+
+  --cqa-header-h: 84px;
+  --cqa-ticker-h: 34px;
+
+  color-scheme: light;
+}
+
+.cqa-root[data-theme="dark"] {
+  --cqa-paper: #040C08;
+  --cqa-surface: #0A1711;
+  --cqa-ink: #EEF6EF;
+  --cqa-graphite: #B5C3B9;
+  --cqa-mute: #8B9C91;
+  --cqa-mist: #0E1E16;
+  --cqa-mist-2: #13281D;
+  --cqa-line: rgba(220, 255, 230, .08);
+  --cqa-line-strong: rgba(220, 255, 230, .16);
+  --cqa-green-text: #8FE07A;
+  --cqa-green-deep: #1E8A4C;
+  --cqa-mint: #12331F;
+  --cqa-amber-text: #E8BC57;
+  --cqa-amber-soft: #2C220E;
+  --cqa-red: #F07A70;
+  --cqa-red-soft: #3A1513;
+  --cqa-glass: rgba(10, 23, 17, .6);
+  --cqa-glass-line: rgba(220, 255, 230, .1);
+  --cqa-shadow-soft: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 24px 60px -30px rgba(0, 0, 0, .8);
+  --cqa-shadow-float: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 20px 50px -20px rgba(0, 0, 0, .8);
+  color-scheme: dark;
+}
