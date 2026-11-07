@@ -1,0 +1,13 @@
+# secrets
+.env
+backend/.env
+# python
+__pycache__/
+*.pyc
+.venv/
+backend/.venv/
+.pytest_cache/
+# local data (содержит audio_url с sig организаторов)
+data/*.db
+data/*.db-*
+data/raw/
