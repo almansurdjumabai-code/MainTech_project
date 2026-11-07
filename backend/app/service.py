@@ -124,6 +124,7 @@ def _adhoc_conversation(payload) -> dict:
 
 def evaluate_one(conversation: dict, checklist: dict, mode: str | None = None, judge=None) -> dict:
     result = evaluate_conversation(conversation, checklist, judge or make_judge(mode))
+    result["evaluated_at"] = db.now()  # время оценки; updated_at меняется и от решений по апелляциям
     attach_offsets(result, conversation)
     saved = db.save_result(result)
     # переоценка заменяет результат: открытые апелляции к старой версии больше не актуальны

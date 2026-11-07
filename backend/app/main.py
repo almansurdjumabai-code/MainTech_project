@@ -53,6 +53,15 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def _revalidate_ui(request: Request, call_next):
+    """UI — ES-модули без сборки: браузер держит старые .js после обновления. no-cache = сверка по ETag (304), без устаревшего кода."""
+    response = await call_next(request)
+    if request.url.path.startswith(("/app", "/labeler")):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 @app.exception_handler(service.NotFound)
 async def _nf(_, exc):
     return JSONResponse(status_code=404, content={"detail": str(exc)})

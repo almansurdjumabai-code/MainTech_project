@@ -234,6 +234,7 @@ def criterion_ui(c: dict) -> dict:
 
 
 def evaluation_ui(res: dict, created_at: str | None, with_raw: bool = True) -> dict:
+    created_at = res.get("evaluated_at") or created_at
     orig = res.get("original") or res
     pipe = res.get("pipeline") or {}
     names = {s["id"]: s["name"] for s in res.get("sections") or []}
@@ -289,7 +290,7 @@ def _latest_by_conversation(rows, active: str) -> dict[str, tuple[dict, str]]:
         rank = (body["checklist_id"] == active, updated)
         if not cur or rank > (cur[0]["checklist_id"] == active, cur[2]):
             best[cid] = (body, created, updated)
-    return {k: (v[0], v[1]) for k, v in best.items()}
+    return {k: (v[0], v[2]) for k, v in best.items()}  # время оценки = последнее обновление (переоценка)
 
 
 def _result_or_404(evaluation_id: str) -> tuple[dict, str]:
@@ -300,7 +301,7 @@ def _result_or_404(evaluation_id: str) -> tuple[dict, str]:
     rows = db.result_rows("result_id=?", (rid,))
     if not rows:
         _err(404, "Оценка не найдена")
-    return rows[0][0], rows[0][1]
+    return rows[0][0], rows[0][2]
 
 
 # ---------------- апелляции ----------------
@@ -448,7 +449,7 @@ def get_conversation(conversation_id: str, request: Request):
 
 @router.get("/conversations/{conversation_id}/evaluations")
 def list_evaluations(conversation_id: str):
-    return [evaluation_ui(body, created) for body, created, _ in db.result_rows("conversation_id=?", (conversation_id,))]
+    return [evaluation_ui(body, updated) for body, _, updated in db.result_rows("conversation_id=?", (conversation_id,))]
 
 
 @router.post("/conversations/import")
@@ -576,7 +577,7 @@ def decide_appeal(appeal_id: str, payload: dict):
     except service.BadRequest as exc:
         _err(400, f"Недопустимая оценка: {exc}")
     res = out["result"]
-    created = db.result_rows("result_id=?", (res["result_id"],))[0][1]
+    created = db.result_rows("result_id=?", (res["result_id"],))[0][2]
     return {"appeal": appeal_ui(db.get_appeal(a["appeal_id"]), res), "evaluation": evaluation_ui(res, created)}
 
 

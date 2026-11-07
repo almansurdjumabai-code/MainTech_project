@@ -28,6 +28,14 @@ log = logging.getLogger("cqa.judge.compat")
 _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.IGNORECASE)
 _throttle_lock = threading.Lock()
 _last_call = [0.0]
+# модель -> время, когда у неё кончилась дневная квота (общая для процесса: новые судьи сразу берут запасную)
+_quota_exhausted: dict[str, float] = {}
+QUOTA_PAUSE_SEC = 3600
+
+
+def _daily_quota_hit(resp: httpx.Response) -> bool:
+    """429 из-за дневного лимита (повтор через минуту не поможет), а не из-за минутного."""
+    return resp.status_code == 429 and ("PerDay" in resp.text or "per day" in resp.text.lower())
 
 
 def parse_json(text: str) -> dict:
@@ -51,6 +59,9 @@ class OpenAICompatJudge(ClaudeJudge):
     def __init__(self, model: str | None = None, base_url: str | None = None, api_key: str | None = None,
                  transport: httpx.BaseTransport | None = None):
         self.model = model or config.OPENAI_COMPAT_MODEL
+        self.fallback_model = config.OPENAI_COMPAT_FALLBACK_MODEL if model is None else ""
+        if self.fallback_model and time.monotonic() - _quota_exhausted.get(self.model, -1e9) < QUOTA_PAUSE_SEC:
+            self.model = self.fallback_model
         self.base_url = (base_url or config.OPENAI_COMPAT_BASE_URL).rstrip("/")
         self.api_key = api_key if api_key is not None else config.OPENAI_COMPAT_API_KEY
         self.json_mode = config.OPENAI_COMPAT_JSON_MODE  # json_schema | json_object
@@ -111,6 +122,13 @@ class OpenAICompatJudge(ClaudeJudge):
                 log.warning("provider rejected json_schema, switching to json_object")
                 self.json_mode = "json_object"
                 continue
+            if _daily_quota_hit(resp):
+                _quota_exhausted[self.model] = time.monotonic()
+                if self.fallback_model and self.model != self.fallback_model:
+                    log.warning("daily quota exhausted for %s, switching to %s", self.model, self.fallback_model)
+                    self.model = self.fallback_model
+                    continue
+                raise RuntimeError(f"provider daily quota exhausted for {self.model}")  # сразу правила, без ожидания
             if resp.status_code == 429 or resp.status_code >= 500:
                 if attempt == attempts - 1:
                     resp.raise_for_status()

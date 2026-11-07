@@ -63,7 +63,9 @@ def test_health_and_root_serves_ui(client):
     assert r.status_code in (302, 307) and r.headers["location"].startswith("/app/?mock=0&api=")
     page = client.get("/app/")
     assert page.status_code == 200 and "js/app.js" in page.text
-    assert client.get("/app/js/app.js").headers["content-type"].startswith("text/javascript")
+    js = client.get("/app/js/app.js")
+    assert js.headers["content-type"].startswith("text/javascript")
+    assert js.headers["cache-control"] == "no-cache"  # после обновления браузер не держит старые модули
 
 
 def test_dataset_loads_and_unknown_group_is_404(client):
@@ -173,6 +175,15 @@ def test_new_checklist_version_activate_and_rescore(client):
     assert {h["checklistId"] for h in hist} >= {base["id"], saved["id"]}
     bad = client.post("/api/checklists", json={**draft, "criteria": []})
     assert bad.status_code == 400 and isinstance(bad.json()["detail"], str)
+
+
+def test_evaluation_time_is_last_rescoring_not_first_insert(client):
+    first = client.get(f"/api/conversations/{IDS[2]}").json()["evaluation"]
+    time.sleep(1.1)
+    job = wait_job(client, client.post("/api/evaluations", json={"conversationIds": [IDS[2]], "checklistId": first["checklistId"],
+                                                                 "model": "rule-based-v1"}).json()["jobId"])
+    again = client.get(f"/api/evaluations/{job['items'][0]['evaluationId']}").json()
+    assert again["createdAt"] > first["createdAt"]
 
 
 def test_models_and_import(client):

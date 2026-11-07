@@ -1,5 +1,7 @@
 # Quality Assurance AI Automation
 
+**Команда: MainTech** · Freedom Broker CQA Hackathon
+
 **CQA — Conversation Quality Analytics** для Freedom Broker: автоматическая оценка диалогов операторов (чаты и звонки, RU / KZ / EN) по настраиваемому чек-листу. У каждого балла есть объяснение и ссылка на реплику-доказательство. Спорную оценку можно оспорить, проверяющий принимает решение, итог пересчитывается.
 
 ## Быстрый старт (Windows)
@@ -40,6 +42,10 @@ backend\.venv\Scripts\python -m ml.export_results --group-id <ID> --set prod --i
 node qa\validate_results.mjs results\prod\results.json --prod
 git add results/prod/results.json; git commit -m "Add prod results"; git push
 ```
+
+Время на 10 чатов: около 2 минут на основной модели и около 18 минут на запасной (если дневной лимит основной исчерпан). Если LLM недоступна совсем, оценка идёт правилами, а диалоги помечаются на проверку. Файл всё равно будет полным и валидным.
+
+**Модель и стоимость:** гибрид «правила + Gemini» (`gemini-flash-lite-latest`, запасная `gemini-3.8-flash`), бесплатный тариф Google AI Studio, **$0** за оценку. Голосование из 3 прочтений = 3 запроса на диалог. На платном Claude Sonnet 5.5 — расчёт ≈ $0.03–0.07 за оценку ([docs/demo/cost-report.md](docs/demo/cost-report.md)).
 
 ## Структура
 

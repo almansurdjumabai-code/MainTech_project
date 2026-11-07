@@ -465,5 +465,6 @@
   "unit.sec": "с",
   "unit.min": "мин",
   "unit.hour": "ч",
-  "unit.ms": "мс"
+  "unit.ms": "мс",
+  "dash.accuracyFew": "решений по апелляциям: {n}; процент — от {min}"
 }

@@ -2,7 +2,7 @@
  * Conversations: dataset loader (group_id), JSON / manual import, batch evaluation with live progress,
  * filterable / sortable table.
  */
-import { html, render, $, $$, fmtClock, fmtScore, isVoice, langCode, fmtDate, debounce } from '../core/utils.js';
+import { html, render, $, $$, fmtClock, fmtScore, isVoice, langCode, fmtDate, debounce, storage } from '../core/utils.js';
 import { icon } from '../core/icons.js';
 import { t, getLang } from '../core/i18n.js';
 import { store } from '../core/store.js';
@@ -440,7 +440,7 @@ export function mount(root, props = {}) {
     if (el.dataset.sel) { el.checked ? ui.selected.add(el.dataset.sel) : ui.selected.delete(el.dataset.sel); el.closest('tr')?.classList.toggle('is-selected', el.checked); drawRun(); return; }
     if (el.hasAttribute('data-sel-all')) { filtered().forEach((c) => (el.checked ? ui.selected.add(c.conversation_id) : ui.selected.delete(c.conversation_id))); drawTable(); drawRun(); return; }
     if (el.dataset.r === 'checklist') store.set({ checklistId: el.value });
-    if (el.dataset.r === 'model') store.set({ model: el.value });
+    if (el.dataset.r === 'model') { storage.set('modelPicked', true); store.set({ model: el.value }); }
     if (el.dataset.f === 'channel') { ui.channel = el.value; refilter(); }
     if (el.dataset.f === 'status') { ui.status = el.value; refilter(); }
     if (el.dataset.f === 'score') { ui.score = el.value; refilter(); }

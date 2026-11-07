@@ -29,12 +29,17 @@ LLM_STRATEGY = os.getenv("LLM_STRATEGY", "per_criterion").lower()
 # не оплачивают уже оценённые критерии заново
 LLM_RESULT_CACHE = os.getenv("LLM_RESULT_CACHE", "1").lower() not in ("0", "false", "no")
 LLM_TIMEOUT_SEC = float(os.getenv("LLM_TIMEOUT_SEC", "120"))
+# Голосование: N независимых прочтений диалога, по каждому критерию — ответ большинства;
+# расхождение прочтений понижает уверенность и отправляет критерий на ручную проверку (1 = выключено)
+LLM_VOTES = max(1, int(os.getenv("LLM_VOTES", "1")))
 LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "3"))  # SDK: экспоненциальный backoff на 429/5xx/сеть
 
 # OpenAI-совместимый провайдер (по умолчанию — бесплатный Gemini API из Google AI Studio)
 OPENAI_COMPAT_BASE_URL = os.getenv("OPENAI_COMPAT_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai").strip()
 OPENAI_COMPAT_API_KEY = os.getenv("OPENAI_COMPAT_API_KEY", "").strip()
 OPENAI_COMPAT_MODEL = os.getenv("OPENAI_COMPAT_MODEL", "gemini-flash-latest")
+# запасная модель со своей дневной квотой: при исчерпании квоты основной переключаемся сразу, без ожидания
+OPENAI_COMPAT_FALLBACK_MODEL = os.getenv("OPENAI_COMPAT_FALLBACK_MODEL", "").strip()
 OPENAI_COMPAT_JSON_MODE = os.getenv("OPENAI_COMPAT_JSON_MODE", "json_schema")  # json_schema | json_object
 OPENAI_COMPAT_PRICE_IN = float(os.getenv("OPENAI_COMPAT_PRICE_IN", "0"))  # бесплатный тариф = 0
 OPENAI_COMPAT_PRICE_OUT = float(os.getenv("OPENAI_COMPAT_PRICE_OUT", "0"))
