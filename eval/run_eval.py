@@ -109,7 +109,9 @@ def run_mode(mode: str, gold: dict, checklist: dict) -> dict | None:
             if want is None:
                 continue
             c = got[crit_id]
-            rows.append({"conversation_id": cid, "language": conv.get("language"), "criterion": crit_id,
+            human_why = ((gold.get("meta") or {}).get(cid, {}).get("reasons") or {}).get(crit_id, "")
+            rows.append({"conversation_id": cid, "language": conv.get("language"), "criterion": crit_id, "human_reason": human_why,
+                         "model_explanation": c.get("explanation", ""),
                          "gold": str(want), "pred": str(c["answer"]), "ok": str(c["answer"]) == str(want),
                          "needs_review": bool(c.get("needs_review")), "review_reasons": c.get("review_reasons") or [],
                          "confidence": c.get("confidence")})
@@ -195,7 +197,10 @@ def to_markdown(gold: dict, results: list[dict]) -> str:
                      f"{rv['errors_sent_to_review']} из {rv['errors_total']} | {r['cost_per_conversation']:.4f} | {r['latency_sec_avg']} |")
     for r in results:
         m = r["metrics"]
-        lines += ["", f"## {r['mode']}", "", "| Критерий | n | Accuracy | Cohen's κ | Macro-F1 | Матрица (gold → pred) |", "|---|---|---|---|---|---|"]
+        weak = [cid for cid, cm in m["criteria"].items() if cm["accuracy"] < 0.8]
+        lines += ["", f"## {r['mode']}", "",
+                  f"Рабочая планка QA — 80% совпадений по каждому критерию. Ниже планки (первыми в доработку): {', '.join(weak) or 'нет'}.", "",
+                  "| Критерий | n | Accuracy | Cohen's κ | Macro-F1 | Матрица (gold → pred) |", "|---|---|---|---|---|---|"]
         for cid, cm in m["criteria"].items():
             conf = "; ".join(f"{g}→{', '.join(f'{p}:{n}' for p, n in sorted(ps.items()))}" for g, ps in sorted(cm["confusion"].items()))
             lines.append(f"| {cid} | {cm['n']} | {pct(cm['accuracy'])} | {num(cm['kappa'])} | "
@@ -206,9 +211,11 @@ def to_markdown(gold: dict, results: list[dict]) -> str:
                   f"Токены: {r['usage']}"]
         misses = [x for x in r["rows"] if not x["ok"]]
         if misses:
-            lines += ["", "Промахи:"] + [f"- {x['conversation_id']} {x['criterion']}: gold={x['gold']} pred={x['pred']}"
-                                          f"{' → отправлено на проверку (' + ', '.join(x['review_reasons']) + ')' if x['needs_review'] else ''}"
-                                          for x in misses]
+            lines += ["", "Расхождения (для ML-инженера):", "", "| Диалог | Критерий | Модель | Человек | Почему (человек) | Объяснение модели | Ушло на проверку |",
+                      "|---|---|---|---|---|---|---|"]
+            lines += [f"| {x['conversation_id']} | {x['criterion']} | {x['pred']} | {x['gold']} | {x['human_reason'] or '—'} | "
+                      f"{x['model_explanation'][:160].replace('|', '/')} | {', '.join(x['review_reasons']) if x['needs_review'] else 'нет'} |"
+                      for x in misses]
     return "\n".join(lines) + "\n"
 
 

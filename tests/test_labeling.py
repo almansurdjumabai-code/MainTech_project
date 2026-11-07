@@ -75,3 +75,11 @@ def test_second_labeler_is_blind_and_separate(client):
     agr = human_agreement(gold)
     assert agr["criteria"]["C6"]["agreement"] == 0 and agr["criteria"]["C1"]["agreement"] == 1
     assert kappa([("YES", "YES"), ("NO", "NO")]) == 1.0 and kappa([("YES", "NO"), ("NO", "YES")]) == -1.0
+
+
+def test_reasons_saved_per_criterion(client):
+    cid = SPLIT["conversation_ids"][1]
+    db.upsert_conversation({**CONV, "conversation_id": cid}, "DEV")
+    client.put(f"/labeling/labels/{cid}", json={"labels": GOOD, "labeler": "qa", "reasons": {"C1": "#1 поздоровалась", "ZZ": "x"}})
+    meta = json.loads(Path(labeling.gold_path()).read_text(encoding="utf-8"))["meta"][cid]
+    assert meta["reasons"] == {"C1": "#1 поздоровалась"}

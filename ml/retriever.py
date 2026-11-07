@@ -6,6 +6,7 @@
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
@@ -90,9 +91,19 @@ def _repeated_questions(ctx: Ctx) -> list[Turn]:
     return [t for t in ctx.after(ctx.first_op.index, "client") if L.REPEAT_Q.search(t.text)]
 
 
+_COURTESY = re.compile(r"спасибо|благодар|рақмет|\bthanks?\b|\bthank\s+you\b|\bок\b|\bok\b|\bда\b|\bиә\b|\byes\b", re.IGNORECASE)
+
+
 def _client_request(ctx: Ctx) -> list[Turn]:
-    """Реплики клиента, где сформулирован запрос (вопрос/проблема), без коротких «да», «2», «ок»."""
-    return [t for t in ctx.client if len(t.text.strip()) >= 12 and not t.text.strip().isdigit()]
+    """Реплики клиента, где сформулирован запрос (вопрос/проблема): без коротких «да», «2», «ок»
+    и без реплик, состоящих только из приветствия/благодарности («Здравствуйте» — ещё не запрос)."""
+    out = []
+    for t in ctx.client:
+        text = t.text.strip()
+        rest = _COURTESY.sub("", L.GREETING.sub("", text)).strip(" .,!?-—)(")
+        if len(text) >= 12 and not text.isdigit() and len(rest) >= 6:
+            out.append(t)
+    return out
 
 
 # ---------------- per-rule analysis ----------------

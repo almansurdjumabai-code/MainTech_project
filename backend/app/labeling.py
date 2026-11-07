@@ -56,6 +56,7 @@ class LabelIn(BaseModel):
     labels: dict[str, Optional[Any]]
     labeler: str = Field(min_length=1, max_length=100)
     notes: str = Field(default="", max_length=4000)
+    reasons: dict[str, str] = Field(default_factory=dict)  # обоснование разметчика по критерию (необязательно)
 
 
 @router.get("/split")
@@ -99,7 +100,8 @@ def put_label(conversation_id: str, payload: LabelIn):
     with _lock:
         gold = _load_gold()
         first = gold["meta"].get(conversation_id, {}).get("labeler")
-        entry = {"labeler": payload.labeler, "notes": payload.notes, "labeled_at": db.now()}
+        reasons = {k: v.strip()[:1000] for k, v in payload.reasons.items() if k in crits and v and v.strip()}
+        entry = {"labeler": payload.labeler, "notes": payload.notes, "reasons": reasons, "labeled_at": db.now()}
         if first and first != payload.labeler:
             # второй разметчик: отдельно, для согласия человек–человек (основная разметка не перезаписывается)
             gold.setdefault("second", {})[conversation_id] = {"labels": clean, **entry}

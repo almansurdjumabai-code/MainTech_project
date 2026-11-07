@@ -189,6 +189,7 @@ function renderForm() {
             ${options(c).map((v) => `<label><input type="radio" name="${esc(c.id)}" value="${esc(v)}"><span>${esc(lab(v))}</span></label>`).join("")}
             <label class="unsure"><input type="radio" name="${esc(c.id)}" value="__null"><span>не уверен</span></label>
           </div>
+          <input type="text" class="why" data-crit="${esc(c.id)}" placeholder="Обоснование (необязательно): какая реплика и почему" style="width:100%;margin-top:6px">
         </div>`).join("")}
       <p><textarea id="notes" rows="2" style="width:100%" placeholder="Комментарий (необязательно)"></textarea></p>
       <p><button type="submit" id="save">Сохранить разметку</button> <span id="formerr" class="err"></span></p>
@@ -210,7 +211,8 @@ async function save(e) {
   try {
     await api(`/labeling/labels/${encodeURIComponent(state.current)}`, {
       method: "PUT", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({labels, labeler: name, notes: $("notes").value}),
+      body: JSON.stringify({labels, labeler: name, notes: $("notes").value,
+        reasons: Object.fromEntries([...document.querySelectorAll(".why")].map((w) => [w.dataset.crit, w.value]))}),
     });
     state.split = await api("/labeling/split");
     renderList();
