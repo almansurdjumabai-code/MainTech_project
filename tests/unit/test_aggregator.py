@@ -7,7 +7,7 @@ from scoring import ScoringError, aggregate
 from scoring.checklist import Checklist
 
 CHECKLIST = json.loads(
-    (Path(__file__).resolve().parents[1] / "configs/checklists/cqa-default-v1.json").read_text(encoding="utf-8")
+    (Path(__file__).resolve().parents[2] / "configs/checklists/cqa-default-v1.json").read_text(encoding="utf-8")
 )
 
 

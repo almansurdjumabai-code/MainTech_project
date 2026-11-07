@@ -2,7 +2,7 @@
 
     backend\\.venv\\Scripts\\python -m eval.run_eval                                  # rule-based
     backend\\.venv\\Scripts\\python -m eval.run_eval --modes rules,hybrid,llm_only    # сравнение (LLM-режимы нужен ключ)
-    backend\\.venv\\Scripts\\python -m eval.run_eval --modes rules --out backend/docs/demo/eval_results
+    backend\\.venv\\Scripts\\python -m eval.run_eval --modes rules --out docs/demo/eval_results
 
 Режимы:
 - rules    — только правила (retriever + rule judge), бесплатно;

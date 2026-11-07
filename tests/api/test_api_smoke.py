@@ -8,7 +8,7 @@ from backend.app import ingest as ingest_mod
 from backend.app import service
 from backend.app.main import app
 
-FIXTURE = json.loads((Path(__file__).parent / "fixtures/synthetic.json").read_text(encoding="utf-8"))
+FIXTURE = json.loads((Path(__file__).parents[1] / "fixtures/synthetic.json").read_text(encoding="utf-8"))
 
 
 @pytest.fixture(scope="module")

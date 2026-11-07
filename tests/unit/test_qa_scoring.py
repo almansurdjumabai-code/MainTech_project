@@ -8,7 +8,7 @@ import pytest
 
 from scoring import ScoringError, aggregate
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 CL = json.loads((ROOT / "configs/checklists/cqa-default-v1.json").read_text(encoding="utf-8"))
 
 

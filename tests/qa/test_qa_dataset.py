@@ -3,9 +3,9 @@ import copy
 import json
 from pathlib import Path
 
-from tests.qa_dataset import check
+from tests.qa.qa_dataset import check
 
-RECS = json.loads((Path(__file__).parent / "fixtures/synthetic.json").read_text(encoding="utf-8"))["data"]["records"]
+RECS = json.loads((Path(__file__).parents[1] / "fixtures/synthetic.json").read_text(encoding="utf-8"))["data"]["records"]
 CALL = {"conversation_id": "c1", "channel": "voice call", "language": "RU", "audio_url": "https://x/player",
         "transcript": [{"timestamp": "2026-11-03T13:10:00.6388245+00:00", "speaker": "operator", "text": "Здравствуйте"}]}
 

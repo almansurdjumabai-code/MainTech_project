@@ -1,8 +1,8 @@
 """QA блок 1: проверка входного набора организаторов (до того, как ошибки данных станут «ошибками модели»).
 
-    backend\\.venv\\Scripts\\python -m tests.qa_dataset              # живой запрос DEV у организаторов
-    backend\\.venv\\Scripts\\python -m tests.qa_dataset --from-db    # то, что уже загружено в БД
-    backend\\.venv\\Scripts\\python -m tests.qa_dataset --group-id CONTROL --no-counts
+    backend\\.venv\\Scripts\\python -m tests.qa.qa_dataset              # живой запрос DEV у организаторов
+    backend\\.venv\\Scripts\\python -m tests.qa.qa_dataset --from-db    # то, что уже загружено в БД
+    backend\\.venv\\Scripts\\python -m tests.qa.qa_dataset --group-id CONTROL --no-counts
 """
 from __future__ import annotations
 

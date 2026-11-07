@@ -37,7 +37,7 @@ curl.exe -X POST http://127.0.0.1:8000/evaluate/batch -H "Content-Type: applicat
 Проверка организаторов на t+23h: «заменить один критерий». Сохраняем [checklist_v2_example.json](checklist_v2_example.json) (станет `cqa-default-v2`), где C7 «Завершение» заменён на C9 «Предупреждение об ожидании» (binary, вес 5, N/A — «пауз не было»):
 
 ```powershell
-curl.exe -X POST http://127.0.0.1:8000/checklists -H "Content-Type: application/json" --data-binary "@backend/docs/demo/checklist_v2_example.json"
+curl.exe -X POST http://127.0.0.1:8000/checklists -H "Content-Type: application/json" --data-binary "@docs/demo/checklist_v2_example.json"
 curl.exe -X POST http://127.0.0.1:8000/evaluate -H "Content-Type: application/json" -d "{\"conversation_id\":\"p1-ru-013\",\"checklist_id\":\"cqa-default-v2\"}"
 ```
 

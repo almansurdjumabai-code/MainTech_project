@@ -11,7 +11,7 @@
 
 ## Сравнение режимов
 
-Команда: `backend\.venv\Scripts\python -m eval.run_eval --modes rules,hybrid,llm_only --out backend/docs/demo/eval_results`
+Команда: `backend\.venv\Scripts\python -m eval.run_eval --modes rules,hybrid,llm_only --out docs/demo/eval_results`
 
 | Режим | Accuracy | False PASS по грубым ошибкам | На проверку | Точность авто-ответов | Ошибок отправлено человеку | $/диалог | Статус |
 |---|---|---|---|---|---|---|---|
@@ -57,12 +57,12 @@
 
 - Сплит `eval/split_test.json` — 18 DEV-диалогов **не из gold**: RU-чаты 6, RU-звонки 2, KZ 5, EN 5 (случайно, seed 20261107, список зафиксирован).
 - Разметка — человек в инструменте `http://127.0.0.1:8000/labeler/`. **Ответы системы скрыты до сохранения разметки** (сервер отдаёт сравнение только после неё, `409` до), чтобы человек не подстраивался под машину. «Не уверен» = `null`, в метрику не идёт.
-- Результат — `eval/gold_human.json` (кто и когда — в `meta`), метрики: `python -m eval.run_eval --gold eval/gold_human.json --modes rules,hybrid --out backend/docs/demo/eval_results`.
+- Результат — `eval/gold_human.json` (кто и когда — в `meta`), метрики: `python -m eval.run_eval --gold eval/gold_human.json --modes rules,hybrid --out docs/demo/eval_results`.
 - Ограничение: LLM эти диалоги не видела; лексиконы правил собирались по всему DEV, поэтому для `rules` это не полностью невиданные данные. Полностью независимый тест — контрольный набор организаторов, размеченный тем же инструментом.
 - Статус: **разметка ещё не сделана** — цифр по этому набору нет.
 
 ## Как получить недостающие цифры
 
 1. `ANTHROPIC_API_KEY` в `backend/.env` → `python -m ml.live_smoke` (1 диалог, центы).
-2. `python -m eval.run_eval --modes rules,hybrid,llm_only --out backend/docs/demo/eval_results` (10 диалогов × 2 LLM-режима).
+2. `python -m eval.run_eval --modes rules,hybrid,llm_only --out docs/demo/eval_results` (10 диалогов × 2 LLM-режима).
 3. Человек размечает сплит в `/labeler/` → метрики по `eval/gold_human.json` можно называть согласием с человеком.

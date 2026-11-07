@@ -11,7 +11,7 @@ from ml.judges import ClaudeJudge, Usage
 from ml.pipeline import evaluate_conversation
 from ml.retriever import build_ctx, retrieve
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 CHECKLIST = json.loads((ROOT / "configs/checklists/cqa-default-v1.json").read_text(encoding="utf-8"))
 CONV = json.loads((ROOT / "tests/fixtures/synthetic.json").read_text(encoding="utf-8"))["data"]["records"][3]  # t-ru-missed
 

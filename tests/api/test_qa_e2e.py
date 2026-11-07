@@ -11,7 +11,7 @@ from backend.app import ingest as ingest_mod
 from backend.app.ingest import IngestError
 from backend.app.main import app
 
-FIXTURE = json.loads((Path(__file__).parent / "fixtures/synthetic.json").read_text(encoding="utf-8"))
+FIXTURE = json.loads((Path(__file__).parents[1] / "fixtures/synthetic.json").read_text(encoding="utf-8"))
 CALL = {"conversation_id": "qa-call", "channel": "voice call", "language": "RU", "audio_url": "https://organizers.example/player?x=1",
         "transcript": [
             {"timestamp": "2026-11-03T13:10:00.0000000+00:00", "speaker": "system", "text": "Агент присоединился."},

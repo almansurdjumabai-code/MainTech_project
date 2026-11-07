@@ -10,7 +10,7 @@ from backend.app import ingest as ingest_mod
 from backend.app.main import app
 from ml import batch as batch_cli
 
-FIXTURE = json.loads((Path(__file__).parent / "fixtures/synthetic.json").read_text(encoding="utf-8"))
+FIXTURE = json.loads((Path(__file__).parents[1] / "fixtures/synthetic.json").read_text(encoding="utf-8"))
 
 CALL = {
     "conversation_id": "t-call", "channel": "voice call", "language": "RU",

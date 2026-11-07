@@ -46,7 +46,7 @@ backend\.venv\Scripts\python -m eval.run_eval --mode anthropic                # 
 Rule-based сейчас совпадает с этой разметкой на 97% (67 из 69 ответов). Это завышенная оценка: разметку делала модель (не человек),
 а правила дорабатывались на этих же диалогах. На контрольном наборе основной путь — LLM-судья.
 
-Материалы для защиты (архитектура, evaluation, стоимость, сценарии, ограничения, матрица требований): [docs/demo/](docs/demo/README.md).
+Материалы для защиты (архитектура, evaluation, стоимость, сценарии, ограничения, матрица требований): [docs/demo/](../docs/demo/README.md).
 
 Независимая разметка: http://127.0.0.1:8000/labeler/ (слепая, 18 диалогов из `eval/split_test.json` → `eval/gold_human.json`).
 
@@ -147,11 +147,11 @@ Rule-based сейчас совпадает с этой разметкой на 9
 Тот же адаптер работает с Groq, OpenRouter и локальной Ollama — меняются `OPENAI_COMPAT_BASE_URL` / `OPENAI_COMPAT_MODEL`.
 Доступные модели: `backend\.venv\Scripts\python -m ml.live_smoke --list-models`. Если задан `ANTHROPIC_API_KEY`, в режиме `auto` приоритет у Claude.
 
-Подробно и с методикой: [docs/demo/cost-report.md](docs/demo/cost-report.md). Экономия без потери качества: кэш префикса, кэш ответов `LLM_RESULT_CACHE=1` (повтор — $0, замена одного критерия — 1 вызов вместо 8), `LLM_STRATEGY=single_call` (все критерии одним вызовом; включать после сравнения в eval).
+Подробно и с методикой: [docs/demo/cost-report.md](../docs/demo/cost-report.md). Экономия без потери качества: кэш префикса, кэш ответов `LLM_RESULT_CACHE=1` (повтор — $0, замена одного критерия — 1 вызов вместо 8), `LLM_STRATEGY=single_call` (все критерии одним вызовом; включать после сравнения в eval).
 
 | Модель (`LLM_MODEL`) | Цена, $ / 1M токенов (вход / выход) | Одна полная оценка (8 вызовов) |
 |---|---|---|
-| `claude-sonnet-5-5` (по умолчанию) | 2 / 10, чтение кэша 0.20 | ≈ $0.03–0.07 (оценка, см. docs/demo/cost-report.md) |
+| `claude-sonnet-5-5` (по умолчанию) | 2 / 10, чтение кэша 0.20 | ≈ $0.03–0.07 (оценка, см. ../docs/demo/cost-report.md) |
 | `claude-opus-5-5` | 4 / 20, чтение кэша 0.20 | ≈ $0.06–0.14 |
 | `claude-haiku-5-5` | 0.10 / 0.50 | ≈ $0.003 |
 | rule-based (`LLM_PROVIDER=rules`) | 0 | 0 |
