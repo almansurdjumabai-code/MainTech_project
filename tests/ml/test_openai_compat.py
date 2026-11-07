@@ -219,3 +219,14 @@ def test_voting_stops_after_switch_to_slow_fallback(fresh_quota, monkeypatch):
     res = evaluate_conversation(CONV, CHECKLIST, OpenAICompatJudge(base_url="https://example.test/v1", api_key="k", transport=t))
     assert [c["model"] for c in calls] == ["gemini-lite", "gemini-backup"]  # одно прочтение на запасной модели
     assert all(c["source"] == "llm" for c in res["criteria"])
+
+
+def test_fallback_chain_skips_exhausted_models(fresh_quota, monkeypatch):
+    monkeypatch.setattr(config, "LLM_STRATEGY", "single_call")
+    monkeypatch.setattr(config, "OPENAI_COMPAT_MODEL", "gemini-lite")
+    monkeypatch.setattr(config, "OPENAI_COMPAT_FALLBACK_MODEL", "gemma-big, gemini-flash")
+    exhausted = {"gemini-lite", "gemma-big"}
+    t, calls = server(lambda r, b, n: httpx.Response(429, json=DAILY_429) if b["model"] in exhausted else ok_reply(b))
+    res = evaluate_conversation(CONV, CHECKLIST, OpenAICompatJudge(base_url="https://example.test/v1", api_key="k", transport=t))
+    assert [c["model"] for c in calls] == ["gemini-lite", "gemma-big", "gemini-flash"]
+    assert res["pipeline"]["model"] == "gemini-flash" and all(c["source"] == "llm" for c in res["criteria"])
