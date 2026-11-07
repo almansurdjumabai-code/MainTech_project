@@ -43,8 +43,12 @@ backend\.venv\Scripts\python -m eval.run_eval --show-misses                   # 
 backend\.venv\Scripts\python -m eval.run_eval --mode anthropic                # Claude (нужен ключ)
 ```
 
-Rule-based сейчас совпадает с этой разметкой на 97% (67 из 69 ответов). Это завышенная оценка: правила дорабатывались
-на этих же диалогах. На контрольном наборе основной путь — LLM-судья.
+Rule-based сейчас совпадает с этой разметкой на 97% (67 из 69 ответов). Это завышенная оценка: разметку делала модель (не человек),
+а правила дорабатывались на этих же диалогах. На контрольном наборе основной путь — LLM-судья.
+
+Материалы для защиты (архитектура, evaluation, стоимость, сценарии, ограничения, матрица требований): [docs/demo/](docs/demo/README.md).
+
+Живая проверка Claude API (центы): `backend\.venv\Scripts\python -m ml.live_smoke`. Сравнение режимов: `python -m eval.run_eval --modes rules,hybrid,llm_only --out backend/docs/demo/eval_results`.
 
 План на остаток хакатона и промпт для ассистента любого участника команды: [HACKATHON_PROMPT.md](HACKATHON_PROMPT.md).
 
@@ -67,7 +71,7 @@ Rule-based сейчас совпадает с этой разметкой на 9
 | POST | `/evaluate` | `{conversation_id, checklist_id}` или `{transcript:[{timestamp,speaker,text}], language}` |
 | POST | `/evaluate/batch` | `{group_id, checklist_id, force?}` → `job_id`; статус `GET /evaluate/batch/{job_id}` (хранится в БД) |
 | GET | `/evaluate/batch` | последние batch-задачи |
-| GET | `/results?group_id=&checklist_id=` | таблица результатов |
+| GET | `/results?group_id=&checklist_id=&needs_review=true` | таблица результатов (`review_required`, `review_criteria`); `needs_review=true` — очередь на ручную проверку |
 | GET | `/results/export.csv?group_id=&checklist_id=` | выгрузка для Excel (ответы и баллы по критериям) |
 | GET | `/stats?group_id=&checklist_id=` | сводка: средний итог по языкам/каналам, ответы и доля N/A по критериям, грубые ошибки |
 | GET | `/results/{conversation_id}?checklist_id=` | карточка результата |
@@ -105,6 +109,11 @@ Rule-based сейчас совпадает с этой разметкой на 9
   "original": { "criteria": […], "sections": […], "overall": …, "critical_error": … },  // автооценка, не меняется
   "final":    { … },                                                                      // после решений проверяющего
   "appeals": [ … ], "reviews": [{"criterion_id": "C7", "decision": "change", "old_value": "NO", "new_value": "NA", "reason": "…", "overall_before": 69.38, "overall_after": 72.67}],
+  // ручная проверка (добавлено, старые поля не менялись):
+  "review_required": true, "review_criteria": ["C8"], "agreement_rate": 0.875, "review_reasons": {"critical_flag": 1},
+  // в каждом критерии: "rule_answer", "agreement": "agree|near|disagree|null", "confidence": "high|medium|low",
+  //                     "needs_review": bool, "review_reasons": ["rules_llm_disagree", "llm_low_confidence", "llm_fallback",
+  //                     "consistency_override", "no_evidence", "no_rule", "critical_flag"]
   "pipeline": {"judge": "anthropic", "model": "claude-opus-5-5", "llm_calls": 8, "input_tokens": …, "output_tokens": …, "cost_usd": …, "consistency_notes": []}
 }
 ```
@@ -121,12 +130,18 @@ Rule-based сейчас совпадает с этой разметкой на 9
 3. **Consistency** (`ml/consistency.py`): ответ вне шкалы или запрещённый N/A заменяется ответом правил; при пустой консультации C4 не может получить максимум; evidence обязателен.
 4. **Aggregator** (`scoring/aggregator.py`): только математика из PDF. Шкала → `weight * step / max_step`, N/A исключаются и их вес перераспределяется (максимум 100), округление 2 знака half-up, нет применимых → `overall = null`, грубые ошибки отдельно. Решение проверяющего пересчитывается этой же функцией.
 
-Нет ключа или модель ответила ошибкой / отказом → rule-based судья по этому критерию, JSON того же формата, демо не падает.
+5. **Review signals** (`ml/review.py`): правила и LLM — два независимых мнения. Расхождение, низкая самооценка модели, fallback, правка консистентностью, нет evidence, грубая ошибка → `needs_review` с причиной. `confidence` — уровень по этим сигналам, не вероятность.
+
+Нет ключа или модель ответила ошибкой / отказом / таймаутом / битым JSON → rule-based судья по этому критерию, JSON того же формата, критерий уходит на проверку, демо не падает.
+
+Транскрипт передаётся модели как недоверенные данные в `<transcript>`: инструкции внутри реплик не выполняются.
 
 Кэширование промпта: system + транскрипт идут общим префиксом с `cache_control`, критерий — после него. Первый вызов прогревает кэш,
 остальные 7 читают префикс по цене кэша (у Opus 5.5 это $0.20 / 1M вместо $4). Для Opus 5.5 включён серверный fallback модели при отказе.
 
 ## Модель и стоимость
+
+Подробно и с методикой: [docs/demo/cost-report.md](docs/demo/cost-report.md). Экономия без потери качества: кэш префикса, кэш ответов `LLM_RESULT_CACHE=1` (повтор — $0, замена одного критерия — 1 вызов вместо 8), `LLM_STRATEGY=single_call` (все критерии одним вызовом; включать после сравнения в eval).
 
 | Модель (`LLM_MODEL`) | Цена, $ / 1M токенов (вход / выход) | Одна полная оценка (8 вызовов) |
 |---|---|---|
