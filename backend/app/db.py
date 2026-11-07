@@ -58,6 +58,12 @@ CREATE TABLE IF NOT EXISTS appeals (
     resolved_at  TEXT
 );
 
+CREATE TABLE IF NOT EXISTS jobs (
+    job_id     TEXT PRIMARY KEY,
+    body       TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS reviews (
     review_id    INTEGER PRIMARY KEY AUTOINCREMENT,
     result_id    INTEGER NOT NULL,
@@ -310,6 +316,49 @@ def resolve_open_appeals(rid: int, criterion_id: str) -> list[int]:
         c.execute("UPDATE appeals SET status='resolved', resolved_at=? WHERE result_id=? AND criterion_id=? AND status='open'",
                   (now(), rid, criterion_id))
     return ids
+
+
+def supersede_open_appeals(rid: int) -> int:
+    with tx() as c:
+        cur = c.execute("UPDATE appeals SET status='superseded', resolved_at=? WHERE result_id=? AND status='open'", (now(), rid))
+        return cur.rowcount
+
+
+def get_appeal(aid: int) -> dict | None:
+    with tx() as c:
+        r = c.execute("SELECT * FROM appeals WHERE appeal_id=?", (aid,)).fetchone()
+    return dict(r) if r else None
+
+
+def save_job(job: dict) -> None:
+    with tx() as c:
+        c.execute("INSERT INTO jobs(job_id, body, updated_at) VALUES(?,?,?) ON CONFLICT(job_id) DO UPDATE SET body=excluded.body, updated_at=excluded.updated_at",
+                  (job["job_id"], dumps(job), now()))
+
+
+def get_job(job_id: str) -> dict | None:
+    with tx() as c:
+        r = c.execute("SELECT body FROM jobs WHERE job_id=?", (job_id,)).fetchone()
+    return loads(r["body"]) if r else None
+
+
+def list_jobs(limit: int = 20) -> list[dict]:
+    with tx() as c:
+        return [loads(r["body"]) for r in c.execute("SELECT body FROM jobs ORDER BY updated_at DESC LIMIT ?", (limit,)).fetchall()]
+
+
+def all_result_bodies(group_id: str | None = None, checklist_id: str | None = None) -> list[dict]:
+    q = "SELECT r.body FROM results r LEFT JOIN conversations c ON c.conversation_id=r.conversation_id WHERE 1=1"
+    args: list = []
+    if group_id:
+        q += " AND c.group_id=?"
+        args.append(group_id)
+    if checklist_id:
+        q += " AND r.checklist_id=?"
+        args.append(checklist_id)
+    q += " ORDER BY r.conversation_id"
+    with tx() as c:
+        return [loads(r["body"]) for r in c.execute(q, args).fetchall()]
 
 
 def insert_review(rid: int, appeal_id: int | None, criterion_id: str, decision: str,

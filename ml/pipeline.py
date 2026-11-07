@@ -32,9 +32,14 @@ def evaluate_conversation(conversation: dict, checklist: dict, judge=None) -> di
     def run(crit):
         return crit["id"], judge.judge(ctx, crit, hints[crit["id"]], usage)  # Pass B
 
-    workers = config.LLM_MAX_WORKERS if isinstance(judge, ClaudeJudge) else 1
-    with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
-        judgments = dict(pool.map(run, checklist["criteria"]))
+    crits = checklist["criteria"]
+    if isinstance(judge, ClaudeJudge) and len(crits) > 1:
+        # первый вызов прогревает кэш префикса (system + транскрипт), остальные читают его параллельно
+        judgments = dict([run(crits[0])])
+        with ThreadPoolExecutor(max_workers=max(1, config.LLM_MAX_WORKERS)) as pool:
+            judgments.update(pool.map(run, crits[1:]))
+    else:
+        judgments = dict(map(run, crits))
 
     notes = consistency.apply(ctx, checklist, judgments, hints)  # Pass D
     agg = aggregate(checklist, judgments)  # Pass C — только математика
@@ -62,6 +67,8 @@ def evaluate_conversation(conversation: dict, checklist: dict, judge=None) -> di
             "llm_calls": usage.calls,
             "input_tokens": usage.input_tokens,
             "output_tokens": usage.output_tokens,
+            "cache_write_tokens": usage.cache_write_tokens,
+            "cache_read_tokens": usage.cache_read_tokens,
             "cost_usd": usage.cost_usd,
             "llm_fallbacks": usage.fallbacks,
             "errors": usage.errors[:10],

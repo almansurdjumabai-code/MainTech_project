@@ -26,7 +26,27 @@ curl.exe -X POST http://127.0.0.1:8000/evaluate/batch -H "Content-Type: applicat
 Контрольный набор (t+23h): то же самое с новым `group_id`, код не меняется. Batch идемпотентный: повторный запуск пропускает
 уже оценённые диалоги (resume после падения), `"force": true` переоценивает.
 
-Тесты: `backend\.venv\Scripts\python -m pytest -q`
+То же из терминала, без запущенного сервера (та же БД):
+
+```powershell
+backend\.venv\Scripts\python -m ml.batch --group-id DEV --ingest              # загрузить и оценить
+backend\.venv\Scripts\python -m ml.batch --group-id DEV --limit 3 --force     # проба на 3 диалогах (оценить стоимость)
+backend\.venv\Scripts\python -m ml.batch --group-id <NEW> --ingest --checklist cqa-default-v2
+```
+
+Тесты: `backend\.venv\Scripts\python -m pytest -q` (без сети и ключа; LLM-судья проверяется на фейковом клиенте).
+
+Качество против ручной разметки (`eval/gold_dev.json`, 10 DEV-диалогов, черновик — проверить человеком):
+
+```powershell
+backend\.venv\Scripts\python -m eval.run_eval --show-misses                   # rule-based
+backend\.venv\Scripts\python -m eval.run_eval --mode anthropic                # Claude (нужен ключ)
+```
+
+Rule-based сейчас совпадает с этой разметкой на 97% (67 из 69 ответов). Это завышенная оценка: правила дорабатывались
+на этих же диалогах. На контрольном наборе основной путь — LLM-судья.
+
+План на остаток хакатона и промпт для ассистента любого участника команды: [HACKATHON_PROMPT.md](HACKATHON_PROMPT.md).
 
 ## Как фронту стучаться
 
@@ -37,18 +57,27 @@ curl.exe -X POST http://127.0.0.1:8000/evaluate/batch -H "Content-Type: applicat
 | GET | `/health` | статус, какой судья активен (`anthropic` / `rules`) |
 | POST | `/ingest?group_id=DEV` | забрать набор у организаторов (сервером, без CORS) |
 | GET | `/conversations?language=KZ&channel=voice%20call&group_id=DEV` | список + последний итог по диалогу |
-| GET | `/conversations/{id}` | транскрипт: `index`, исходный `timestamp`, `offset_sec` (секунды от начала — для плеера), `audio_url` |
+| GET | `/conversations/{id}` | транскрипт: `index`, исходный `timestamp`, `offset_sec` (секунды от начала — для плеера), `audio_url`, `audio_stream_url` |
+| GET | `/conversations/{id}/audio` | свежая mp3-ссылка записи звонка (`audio_src`, `expires_at`) — ссылка организаторов живёт ~1 ч |
+| GET | `/conversations/{id}/audio/stream` | 307 на mp3: `<audio src=".../audio/stream#t=76.6">` перематывает к реплике |
 | GET | `/checklists` | все версии (`is_latest`) |
 | GET | `/checklists/{id}` | чек-лист целиком |
 | POST | `/checklists` | сохранить новую версию: прислать чек-лист с тем же `family` → `cqa-default-v2` |
+| POST | `/checklists/validate` | dry-run для формы редактирования: `valid`, `errors`, `weight_total` |
 | POST | `/evaluate` | `{conversation_id, checklist_id}` или `{transcript:[{timestamp,speaker,text}], language}` |
-| POST | `/evaluate/batch` | `{group_id, checklist_id, force?}` → `job_id`; статус `GET /evaluate/batch/{job_id}` |
+| POST | `/evaluate/batch` | `{group_id, checklist_id, force?}` → `job_id`; статус `GET /evaluate/batch/{job_id}` (хранится в БД) |
+| GET | `/evaluate/batch` | последние batch-задачи |
 | GET | `/results?group_id=&checklist_id=` | таблица результатов |
+| GET | `/results/export.csv?group_id=&checklist_id=` | выгрузка для Excel (ответы и баллы по критериям) |
+| GET | `/stats?group_id=&checklist_id=` | сводка: средний итог по языкам/каналам, ответы и доля N/A по критериям, грубые ошибки |
 | GET | `/results/{conversation_id}?checklist_id=` | карточка результата |
 | GET | `/results/by-id/{result_id}` | то же по `result_id` |
-| POST | `/results/{result_id}/appeals` | `{criterion_id, comment}` |
-| GET | `/appeals?status=open` | очередь проверяющего (спорная оценка + фрагмент в ответе POST) |
+| POST | `/results/{result_id}/appeals` | `{criterion_id, comment}` → `appeal` + `card` |
+| GET | `/appeals?status=open` | очередь проверяющего: спорная оценка, комментарий, `fragment[]` (реплики вокруг доказательства, `focus`) |
+| GET | `/appeals/{appeal_id}` | одна карточка апелляции |
 | POST | `/results/{result_id}/review` | `{criterion_id, decision: "confirm"\|"change", new_value, reason}` → пересчёт |
+
+Переоценка диалога тем же чек-листом (`force`) заменяет результат; открытые апелляции к старой версии получают статус `superseded`.
 
 ### Контракт результата (стабильный)
 
@@ -92,7 +121,10 @@ curl.exe -X POST http://127.0.0.1:8000/evaluate/batch -H "Content-Type: applicat
 3. **Consistency** (`ml/consistency.py`): ответ вне шкалы или запрещённый N/A заменяется ответом правил; при пустой консультации C4 не может получить максимум; evidence обязателен.
 4. **Aggregator** (`scoring/aggregator.py`): только математика из PDF. Шкала → `weight * step / max_step`, N/A исключаются и их вес перераспределяется (максимум 100), округление 2 знака half-up, нет применимых → `overall = null`, грубые ошибки отдельно. Решение проверяющего пересчитывается этой же функцией.
 
-Нет ключа или модель ответила ошибкой → rule-based судья по этому критерию, JSON того же формата, демо не падает.
+Нет ключа или модель ответила ошибкой / отказом → rule-based судья по этому критерию, JSON того же формата, демо не падает.
+
+Кэширование промпта: system + транскрипт идут общим префиксом с `cache_control`, критерий — после него. Первый вызов прогревает кэш,
+остальные 7 читают префикс по цене кэша (у Opus 5.5 это $0.20 / 1M вместо $4). Для Opus 5.5 включён серверный fallback модели при отказе.
 
 ## Модель и стоимость
 
@@ -104,7 +136,8 @@ curl.exe -X POST http://127.0.0.1:8000/evaluate/batch -H "Content-Type: applicat
 
 Оценка по замеру промптов на DEV: в среднем ≈ 30 тыс. символов входа на 8 вызовов (≈ 10 тыс. токенов),
 выход ≈ 3 тыс. токенов вместе с размышлением при `LLM_EFFORT=low`. Весь DEV (65 диалогов) на Opus 5.5 обойдётся примерно в $6–7.
-Фактическая стоимость каждой оценки считается по `usage` из ответа API и пишется в `pipeline.cost_usd` (цены задаются в `LLM_PRICE_IN` / `LLM_PRICE_OUT`).
+Фактическая стоимость каждой оценки считается по `usage` из ответа API и пишется в `pipeline.cost_usd` (цены задаются в `LLM_PRICE_IN` / `LLM_PRICE_OUT` / `LLM_PRICE_CACHE_READ`; токены кэша — `cache_write_tokens` / `cache_read_tokens`).
+Цифры в таблице — оценка до кэширования. Фактические заменить после первого прогона с ключом.
 
 ## Чек-лист
 
@@ -116,5 +149,7 @@ curl.exe -X POST http://127.0.0.1:8000/evaluate/batch -H "Content-Type: applicat
 ## Что осталось (TODO(hackathon))
 
 - Лексиконы rule-based режима собраны по DEV; на контрольном наборе основной путь — LLM.
-- Batch-задачи хранятся в памяти: после рестарта статус `job_id` теряется, но результаты лежат в БД, и повторный batch досчитывает только оставшееся.
+- Batch идёт в потоке процесса сервера: при рестарте задача получает статус `interrupted`; повторный batch досчитывает только оставшееся.
+- Gold-разметка `eval/gold_dev.json` — черновик, нужна проверка человеком.
+- LLM-путь проверен тестами на фейковом клиенте; живой прогон с ключом ещё не делался.
 - UI (HTML/CSS/JS, Dynamics 365) делает другая часть команды.

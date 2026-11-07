@@ -78,6 +78,18 @@ def _reasks(ctx: Ctx) -> list[Turn]:
     return [t for t in ctx.after(ctx.first_op.index, "client") if L.REASK.search(t.text)]
 
 
+def _already_said(ctx: Ctx) -> list[Turn]:
+    if not ctx.first_op:
+        return []
+    return [t for t in ctx.after(ctx.first_op.index, "client") if L.ALREADY_SAID.search(t.text)]
+
+
+def _repeated_questions(ctx: Ctx) -> list[Turn]:
+    if not ctx.first_op:
+        return []
+    return [t for t in ctx.after(ctx.first_op.index, "client") if L.REPEAT_Q.search(t.text)]
+
+
 def _client_request(ctx: Ctx) -> list[Turn]:
     """Реплики клиента, где сформулирован запрос (вопрос/проблема), без коротких «да», «2», «ок»."""
     return [t for t in ctx.client if len(t.text.strip()) >= 12 and not t.text.strip().isdigit()]
@@ -115,10 +127,16 @@ def rule_need(ctx: Ctx, crit: dict) -> dict:
     if not ctx.first_op:
         return dict(spans=[], missing=None, features={"operator_joined": False}, answer="NA",
                     na_reason="Оператор не вступил в диалог — уточнять было некому.", reason="")
-    questions = [t for t in ctx.op if "?" in t.text and not L.HELP_OFFER.search(t.text)]
+    questions = [t for t in ctx.op if "?" in t.text and not L.HELP_OFFER.search(t.text) and not L.BYPASS.search(t.text)]
     clarifying = [t for t in questions if L.CLARIFY.search(t.text) or len(t.text) < 160]
     reasks = _reasks(ctx)
-    feats = {"operator_questions": len(questions), "client_reasks": len(reasks)}
+    already = _already_said(ctx)
+    feats = {"operator_questions": len(questions), "client_reasks": len(reasks), "client_already_said": len(already)}
+    if already:
+        q = next((t for t in reversed(ctx.op) if t.index < already[0].index), ctx.first_op)
+        return dict(spans=[q.ev("вопрос о том, что клиент уже сообщил"), already[0].ev("клиент: «уже писал»")],
+                    missing=q.ev("здесь ожидалось учесть известные детали"), features=feats, answer="NO",
+                    reason="Оператор не учёл детали, которые клиент уже сообщил, и переспросил их.")
     if clarifying:
         return dict(spans=[t.ev("уточняющий вопрос оператора") for t in clarifying[:2]] + ([ctx.client[0].ev("исходный запрос")] if ctx.client else []),
                     missing=None, features=feats, answer="YES",
@@ -166,17 +184,18 @@ def rule_consult(ctx: Ctx, crit: dict) -> dict:
     subst = [t for t in ctx.op if _substantive(t)]
     instr = [t for t in subst if L.INSTRUCTION.search(t.text)]
     reasks = _reasks(ctx)
-    last = ctx.turns[-1] if ctx.turns else None
+    repeated = _repeated_questions(ctx)
     open_q = [t for t in ctx.client if "?" in t.text and not any(o.index > t.index and _substantive(o) for o in ctx.op)]
     feats = {"substantive_operator_turns": len(subst), "instructions": len(instr), "client_reasks": len(reasks),
-             "unanswered_questions": len(open_q)}
+             "unanswered_questions": len(open_q), "client_repeated_question": len(repeated)}
     if not subst:
         return dict(spans=[requests[0].ev("запрос клиента")], missing=(ctx.first_op or requests[0]).ev("здесь ожидался ответ по существу"),
                     features=feats, answer=0, reason="Ответа по существу нет.")
-    if open_q:
-        return dict(spans=[instr[0].ev("частичный ответ") if instr else subst[0].ev("ответ оператора"), open_q[0].ev("вопрос остался без ответа")],
-                    missing=open_q[0].ev("после этого вопроса ожидался ответ"), features=feats, answer=10,
-                    reason="Часть запроса закрыта, но существенный вопрос клиента остался без ответа.")
+    if open_q or repeated:
+        q = (repeated or open_q)[0]
+        return dict(spans=[instr[0].ev("частичный ответ") if instr else subst[0].ev("ответ оператора"), q.ev("вопрос остался без ответа")],
+                    missing=q.ev("после этого вопроса ожидался ответ по существу"), features=feats, answer=10,
+                    reason="Часть запроса закрыта, но существенный вопрос клиента остался без ответа (клиенту пришлось повторять вопрос).")
     best = (instr or subst)
     if not reasks:
         return dict(spans=[t.ev("ответ / следующий шаг") for t in best[:2]], missing=None, features=feats, answer=20,
@@ -200,6 +219,12 @@ def rule_empathy(ctx: Ctx, crit: dict) -> dict:
                     reason="Оператор допустил невежливую реплику.")
     if not ctx.op:
         return dict(spans=[], missing=None, features=feats, answer="NO", reason="Оператор не ответил клиенту.")
+    repeated = _repeated_questions(ctx)
+    if repeated and not [t for t in empathy if t.index > repeated[0].index]:
+        nxt = next((t for t in ctx.op if t.index > repeated[0].index), ctx.last_op)
+        return dict(spans=[repeated[0].ev("клиент настаивает на своём вопросе"), nxt.ev("ответ без реакции на проблему")],
+                    missing=nxt.ev("здесь ожидалась реакция на конкретную проблему клиента"), features=feats, answer="NO",
+                    reason="Клиент настойчиво повторил вопрос, оператор не отреагировал на его конкретную проблему.")
     if complaints:
         reacted = [t for t in empathy if t.index > complaints[0].index]
         if reacted:
@@ -216,20 +241,31 @@ def rule_empathy(ctx: Ctx, crit: dict) -> dict:
 def rule_control(ctx: Ctx, crit: dict) -> dict:
     if not ctx.op:
         return dict(spans=[], missing=None, features={}, answer=0, reason="Оператор не вёл диалог.")
+    # Шкала по PDF: 10 ясно; 7 один заметный сбой, клиент может продолжить; 4 клиенту приходится переспрашивать;
+    # 0 ход диалога непонятен. Переспрос/повтор вопроса -> 4, «уже писал»/поправка оператора -> 7, 3+ проблем -> 0.
     reasks = _reasks(ctx)
-    glitches = _hits(ctx.op, L.OP_GLITCH)
-    feats = {"client_reasks": len(reasks), "operator_glitches": len(glitches)}
-    n = len(reasks) + (1 if glitches and not reasks else 0)
-    steps = sorted(crit.get("scale") or [0, 4, 7, 10], reverse=True)  # [10,7,4,0]
-    answer = steps[min(n, len(steps) - 1)]
-    if n == 0:
-        return dict(spans=[ctx.op[-1].ev("ответы ясные")], missing=None, features=feats, answer=answer,
+    repeated = _repeated_questions(ctx)
+    glitches = _hits(ctx.op, L.OP_GLITCH) + _already_said(ctx)
+    feats = {"client_reasks": len(reasks), "client_repeated_question": len(repeated), "minor_glitches": len(glitches)}
+    scale = sorted(crit.get("scale") or [0, 4, 7, 10])
+
+    def step(target: int) -> int:  # ближайшая ступень шкалы сверху вниз (на случай изменённой шкалы)
+        return max((s for s in scale if s <= target), default=scale[0])
+
+    problems = sorted(reasks + repeated, key=lambda t: t.index)
+    if len(problems) + len(glitches) >= 3:
+        answer, why = step(0), "Много переспросов и поправок — ход диалога трудно понять."
+    elif problems:
+        answer, why = step(4), "Клиенту пришлось переспрашивать из-за формулировок или порядка ответов."
+    elif glitches:
+        answer, why = step(7), "Один заметный сбой (лишний вопрос или поправка), но клиент смог продолжить."
+    else:
+        return dict(spans=[ctx.op[-1].ev("ответы ясные")], missing=None, features=feats, answer=scale[-1],
                     reason="Ответы оператора ясные и последовательные, переспрашивать не пришлось.")
-    bad = (reasks or glitches)[:2]
+    bad = (problems or glitches)[:2]
     prev_op = next((t for t in reversed(ctx.op) if t.index < bad[0].index), ctx.first_op)
-    return dict(spans=[prev_op.ev("неясная формулировка")] + [t.ev("переспрос / поправка") for t in bad], missing=None,
-                features=feats, answer=answer,
-                reason=f"Зафиксировано сбоев в ясности: {n} (клиент переспрашивал или оператор поправлялся).")
+    return dict(spans=[prev_op.ev("неясная формулировка")] + [t.ev("переспрос / сбой") for t in bad], missing=None,
+                features=feats, answer=answer, reason=why)
 
 
 def rule_close(ctx: Ctx, crit: dict) -> dict:
@@ -243,11 +279,10 @@ def rule_close(ctx: Ctx, crit: dict) -> dict:
     if bye:
         return dict(spans=[bye[-1].ev("прощание / предложение помощи")], missing=None, features=feats, answer="YES",
                     reason="Оператор подвёл итог или предложил помощь и попрощался.")
-    after_last = ctx.after(last_op.index, "client")
-    if left or (after_last and after_last[-1].index == ctx.turns[-1].index and len(after_last) >= 1 and "?" not in after_last[-1].text):
-        ev = (left or after_last)[-1]
-        return dict(spans=[ev.ev("клиент вышел из чата")], missing=None, features=feats, answer="NA",
-                    na_reason="Чат оборвался до возможности его завершить: клиент ушёл после ответа оператора.", reason="")
+    if left:
+        # «спасибо» клиента — не обрыв: оператор мог ответить; N/A только при явном уходе клиента
+        return dict(spans=[left[-1].ev("клиент вышел из чата")], missing=None, features=feats, answer="NA",
+                    na_reason="Чат оборвался до возможности его завершить: клиент покинул чат.", reason="")
     return dict(spans=[last_op.ev("последняя реплика оператора")], missing=last_op.ev("здесь ожидалось прощание или предложение помощи"),
                 features=feats, answer="NO", reason="Оператор закончил диалог без прощания и предложения дальнейшей помощи.")
 

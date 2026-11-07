@@ -20,6 +20,7 @@ LLM_MODEL = os.getenv("LLM_MODEL", "claude-opus-5-5")
 LLM_EFFORT = os.getenv("LLM_EFFORT", "low")
 LLM_PRICE_IN = float(os.getenv("LLM_PRICE_IN", "4.0"))
 LLM_PRICE_OUT = float(os.getenv("LLM_PRICE_OUT", "20.0"))
+LLM_PRICE_CACHE_READ = float(os.getenv("LLM_PRICE_CACHE_READ", str(LLM_PRICE_IN * 0.05)))
 LLM_MAX_WORKERS = int(os.getenv("LLM_MAX_WORKERS", "8"))
 
 DEFAULT_CHECKLIST_ID = os.getenv("DEFAULT_CHECKLIST_ID", "cqa-default-v1")

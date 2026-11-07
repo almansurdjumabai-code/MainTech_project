@@ -1,19 +1,21 @@
 """Бизнес-логика API: чек-листы, оценка, batch, апелляции и пересмотр (тот же aggregator)."""
 from __future__ import annotations
 
+import csv
 import hashlib
+import io
 import json
 import logging
 import threading
 import uuid
-from datetime import datetime
+from collections import Counter, defaultdict
 
 from ml.judges import answer_label, make_judge
 from ml.pipeline import _to_contract, evaluate_conversation
 from scoring import aggregate, normalize_answer
 from scoring.checklist import Checklist, slugify
 
-from . import config, db
+from . import config, db, timeutil
 
 log = logging.getLogger("cqa.service")
 
@@ -65,45 +67,40 @@ def get_checklist_or_404(checklist_id: str | None) -> dict:
 
 # ---------------- conversations ----------------
 
-def _parse_iso(ts: str) -> datetime | None:
-    """ISO 8601 звонков; 7 знаков дробной части (.6388245) python не парсит — режем до 6."""
-    ts = ts.replace("Z", "+00:00")
-    head, dot, rest = ts.partition(".")
-    if dot:
-        digits = "".join(ch for ch in rest if ch.isdigit())
-        ts = f"{head}.{digits[:6]}{rest[len(digits):]}"
-    try:
-        return datetime.fromisoformat(ts)
-    except ValueError:
-        return None
-
-
-def _mmss_seconds(ts: str) -> float | None:
-    try:
-        nums = [float(p) for p in ts.split(":")]
-    except ValueError:
-        return None
-    sec = 0.0
-    for n in nums:
-        sec = sec * 60 + n
-    return sec
-
-
 def conversation_view(conv: dict) -> dict:
     """Добавляет index и offset_sec — для перехода к реплике / позиции в записи звонка.
     Исходные timestamp не трогаем."""
-    turns = conv["transcript"]
-    isos = [_parse_iso(t.get("timestamp") or "") if "T" in (t.get("timestamp") or "") else None for t in turns]
-    first = next((d for d in isos if d), None)
-    out = []
-    for i, t in enumerate(turns):
-        ts = t.get("timestamp") or ""
-        if isos[i] and first:
-            off = round((isos[i] - first).total_seconds(), 2)
-        else:
-            off = _mmss_seconds(ts) if ts and "T" not in ts else None
-        out.append({"index": i, **t, "offset_sec": off})
-    return {**conv, "transcript": out}
+    offs = timeutil.offsets(conv["transcript"])
+    out = [{"index": i, **t, "offset_sec": offs[i]} for i, t in enumerate(conv["transcript"])]
+    view = {**conv, "transcript": out}
+    if conv.get("audio_url"):
+        view["audio_stream_url"] = f"/conversations/{conv['conversation_id']}/audio/stream"
+    return view
+
+
+def attach_offsets(result: dict, conv: dict) -> dict:
+    """offset_sec в каждой evidence — фронт сразу перематывает запись к фрагменту."""
+    offs = timeutil.offsets(conv["transcript"])
+
+    def fix(e):
+        if isinstance(e, dict) and isinstance(e.get("index"), int) and 0 <= e["index"] < len(offs):
+            e["offset_sec"] = offs[e["index"]]
+
+    for block in (result, result.get("original", {}), result.get("final", {})):
+        for c in block.get("criteria", []):
+            fix(c.get("evidence"))
+            fix(c.get("expected_span"))
+            for e in c.get("evidence_all") or []:
+                fix(e)
+    return result
+
+
+def transcript_fragment(conv: dict, index: int | None, radius: int = 2) -> list[dict]:
+    if index is None:
+        return []
+    view = conversation_view(conv)["transcript"]
+    lo, hi = max(0, index - radius), min(len(view), index + radius + 1)
+    return [{**t, "focus": t["index"] == index} for t in view[lo:hi]]
 
 
 # ---------------- evaluate ----------------
@@ -120,7 +117,11 @@ def _adhoc_conversation(payload) -> dict:
 
 def evaluate_one(conversation: dict, checklist: dict, mode: str | None = None, judge=None) -> dict:
     result = evaluate_conversation(conversation, checklist, judge or make_judge(mode))
-    return db.save_result(result)
+    attach_offsets(result, conversation)
+    saved = db.save_result(result)
+    # переоценка заменяет результат: открытые апелляции к старой версии больше не актуальны
+    db.supersede_open_appeals(saved["result_id"])
+    return saved
 
 
 def evaluate_request(payload) -> dict:
@@ -140,27 +141,40 @@ def evaluate_request(payload) -> dict:
 
 # ---------------- batch ----------------
 
-JOBS: dict[str, dict] = {}
-
-
-def _run_batch(job: dict, ids: list[str], checklist: dict, mode: str | None, force: bool) -> None:
+def run_batch(job: dict, ids: list[str], checklist: dict, mode: str | None, force: bool, on_progress=None) -> dict:
+    """Идемпотентно: уже оценённые (conversation_id, checklist_id) пропускаются -> повторный запуск = resume."""
     judge = make_judge(mode)
     job["judge"], job["model"] = judge.name, judge.model
+    db.save_job(job)
     for cid in ids:
         try:
             if not force and db.result_exists(cid, checklist["id"]):
-                job["skipped"] += 1  # идемпотентность / resume
-                continue
-            conv = db.get_conversation(cid)
-            res = evaluate_one(conv, checklist, judge=judge)
-            job["done"] += 1
-            job["cost_usd"] = round(job["cost_usd"] + res["pipeline"]["cost_usd"], 6)
+                job["skipped"] += 1
+            else:
+                conv = db.get_conversation(cid)
+                if not conv:
+                    raise NotFound(f"conversation {cid} not found")
+                res = evaluate_one(conv, checklist, judge=judge)
+                job["done"] += 1
+                job["cost_usd"] = round(job["cost_usd"] + res["pipeline"]["cost_usd"], 6)
+                job["llm_fallbacks"] += res["pipeline"]["llm_fallbacks"]
         except Exception as exc:  # noqa: BLE001 — batch не должен падать целиком
             job["failed"] += 1
             job["errors"].append(f"{cid}: {type(exc).__name__}: {str(exc)[:200]}")
             log.exception("batch item failed %s", cid)
+        db.save_job(job)
+        if on_progress:
+            on_progress(job, cid)
     job["status"] = "finished"
     job["finished_at"] = db.now()
+    db.save_job(job)
+    return job
+
+
+def new_job(group_id: str, checklist_id: str, ids: list[str]) -> dict:
+    return {"job_id": uuid.uuid4().hex[:12], "group_id": group_id, "checklist_id": checklist_id, "status": "running",
+            "total": len(ids), "done": 0, "skipped": 0, "failed": 0, "llm_fallbacks": 0, "errors": [], "cost_usd": 0.0,
+            "started_at": db.now(), "finished_at": None}
 
 
 def start_batch(payload) -> dict:
@@ -168,14 +182,23 @@ def start_batch(payload) -> dict:
     ids = db.conversation_ids(payload.group_id)
     if not ids:
         raise NotFound(f"no conversations for group_id={payload.group_id} (сначала POST /ingest?group_id=...)")
-    job = {"job_id": uuid.uuid4().hex[:12], "group_id": payload.group_id, "checklist_id": checklist["id"], "status": "running",
-           "total": len(ids), "done": 0, "skipped": 0, "failed": 0, "errors": [], "cost_usd": 0.0,
-           "started_at": db.now(), "finished_at": None}
-    JOBS[job["job_id"]] = job
+    job = new_job(payload.group_id, checklist["id"], ids)
     if payload.background:
-        threading.Thread(target=_run_batch, args=(job, ids, checklist, payload.mode, payload.force), daemon=True).start()
-    else:
-        _run_batch(job, ids, checklist, payload.mode, payload.force)
+        db.save_job(job)
+        threading.Thread(target=run_batch, args=(job, ids, checklist, payload.mode, payload.force),
+                         name=f"batch-{job['job_id']}", daemon=True).start()
+        return job
+    return run_batch(job, ids, checklist, payload.mode, payload.force)
+
+
+def get_job_or_404(job_id: str) -> dict:
+    job = db.get_job(job_id)
+    if not job:
+        raise NotFound(f"job {job_id} not found")
+    if job["status"] == "running" and f"batch-{job_id}" not in {t.name for t in threading.enumerate()}:
+        # поток умер вместе с процессом (рестарт сервера) — повторный batch досчитает остаток
+        job["status"] = "interrupted"
+        job["hint"] = "Перезапустите POST /evaluate/batch с теми же параметрами: оценённые диалоги будут пропущены."
     return job
 
 
@@ -195,6 +218,41 @@ def _criterion(result: dict, cid: str) -> dict:
     return c
 
 
+def appeal_card(appeal: dict) -> dict:
+    """Что видит проверяющий: спорная оценка, комментарий, фрагмент диалога вокруг доказательства."""
+    result = db.get_result_by_id(appeal["result_id"]) or {}
+    crit = next((c for c in result.get("final", {}).get("criteria", []) if c["id"] == appeal["criterion_id"]), None)
+    orig = next((c for c in result.get("original", {}).get("criteria", []) if c["id"] == appeal["criterion_id"]), None)
+    conv = db.get_conversation(result["conversation_id"]) if result else None
+    focus = (crit or {}).get("evidence") or {}
+    return {
+        **appeal,
+        "conversation_id": result.get("conversation_id"),
+        "checklist_id": result.get("checklist_id"),
+        "language": result.get("language"),
+        "channel": result.get("channel"),
+        "criterion": None if not crit else {
+            "id": crit["id"], "name": crit["name"], "type": crit["type"], "answer": crit["answer"], "points": crit["points"],
+            "weight": crit["weight"], "na": crit["na"], "explanation": crit["explanation"],
+            "evidence": crit.get("evidence"), "evidence_all": crit.get("evidence_all"),
+            "original_answer": (orig or {}).get("answer"),
+        },
+        "overall": result.get("overall"),
+        "fragment": transcript_fragment(conv, focus.get("index")) if conv else [],
+    }
+
+
+def list_appeal_cards(status: str | None = None, result_id: int | None = None) -> list[dict]:
+    return [appeal_card(a) for a in db.list_appeals(status, result_id)]
+
+
+def get_appeal_card_or_404(aid: int) -> dict:
+    a = db.get_appeal(aid)
+    if not a:
+        raise NotFound(f"appeal {aid} not found")
+    return appeal_card(a)
+
+
 def add_appeal(rid: int, criterion_id: str, comment: str) -> dict:
     result = get_result_or_404(rid)
     crit = _criterion(result, criterion_id)
@@ -204,7 +262,67 @@ def add_appeal(rid: int, criterion_id: str, comment: str) -> dict:
     result.setdefault("appeals", []).append(appeal)
     result["status"] = "appealed"
     db.update_result(rid, result)
-    return {"appeal": appeal, "result": result}
+    return {"appeal": appeal, "card": appeal_card(appeal), "result": result}
+
+
+# ---------------- stats / export ----------------
+
+def stats(group_id: str | None = None, checklist_id: str | None = None) -> dict:
+    convs = db.list_conversations(group_id=group_id)
+    results = db.all_result_bodies(group_id, checklist_id)
+    scored = [r for r in results if r.get("overall") is not None]
+
+    def avg(xs):
+        xs = [x for x in xs if x is not None]
+        return round(sum(xs) / len(xs), 2) if xs else None
+
+    by = {"language": defaultdict(list), "channel": defaultdict(list)}
+    per_crit: dict[str, dict] = {}
+    for r in results:
+        by["language"][r.get("language")].append(r.get("overall"))
+        by["channel"][r.get("channel")].append(r.get("overall"))
+        for c in r["criteria"]:
+            d = per_crit.setdefault(c["id"], {"id": c["id"], "name": c["name"], "answers": Counter(), "points": []})
+            d["answers"][str(c["answer"])] += 1
+            if c["points"] is not None:
+                d["points"].append(c["points"])
+    return {
+        "group_id": group_id, "checklist_id": checklist_id,
+        "conversations": len(convs),
+        "conversations_by_language": dict(Counter(c["language"] for c in convs)),
+        "conversations_by_channel": dict(Counter(c["channel"] for c in convs)),
+        "evaluated": len(results),
+        "avg_overall": avg([r["overall"] for r in scored]),
+        "critical_errors": sum(1 for r in results if r.get("critical_error")),
+        "status": dict(Counter(r.get("status") for r in results)),
+        "avg_overall_by_language": {k: avg(v) for k, v in by["language"].items()},
+        "avg_overall_by_channel": {k: avg(v) for k, v in by["channel"].items()},
+        "criteria": [{"id": d["id"], "name": d["name"], "answers": dict(d["answers"]),
+                      "na_rate": round(d["answers"].get("NA", 0) / max(1, sum(d["answers"].values())), 3),
+                      "avg_points": avg(d["points"])} for d in per_crit.values()],
+        "open_appeals": len(db.list_appeals("open")),
+        "llm_cost_usd": round(sum(r.get("pipeline", {}).get("cost_usd", 0) for r in results), 4),
+    }
+
+
+def export_csv(group_id: str | None = None, checklist_id: str | None = None) -> str:
+    results = db.all_result_bodies(group_id, checklist_id)
+    crit_ids: list[str] = []
+    for r in results:
+        for c in r["criteria"]:
+            if c["id"] not in crit_ids:
+                crit_ids.append(c["id"])
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["result_id", "conversation_id", "checklist_id", "language", "channel", "status", "overall", "overall_original",
+                "critical_error"] + [f"{cid}_answer" for cid in crit_ids] + [f"{cid}_points" for cid in crit_ids])
+    for r in results:
+        cm = {c["id"]: c for c in r["criteria"]}
+        w.writerow([r.get("result_id"), r["conversation_id"], r["checklist_id"], r.get("language"), r.get("channel"), r.get("status"),
+                    r.get("overall"), r.get("original", {}).get("overall"), int(bool(r.get("critical_error")))]
+                   + [cm[c]["answer"] if c in cm else "" for c in crit_ids]
+                   + [cm[c]["points"] if c in cm and cm[c]["points"] is not None else "" for c in crit_ids])
+    return "﻿" + buf.getvalue()  # BOM — чтобы Excel открыл кириллицу
 
 
 def review(rid: int, payload) -> dict:

@@ -50,16 +50,26 @@ class Usage:
     errors: list[str] = field(default_factory=list)
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
-    def add(self, input_tokens: int, output_tokens: int) -> None:
+    cache_write_tokens: int = 0
+    cache_read_tokens: int = 0
+
+    def add(self, input_tokens: int, output_tokens: int, cache_write: int = 0, cache_read: int = 0) -> None:
         # судьи по критериям работают в потоках
         with self._lock:
             self.calls += 1
             self.input_tokens += input_tokens or 0
             self.output_tokens += output_tokens or 0
+            self.cache_write_tokens += cache_write or 0
+            self.cache_read_tokens += cache_read or 0
 
     @property
     def cost_usd(self) -> float:
-        return round(self.input_tokens / 1e6 * config.LLM_PRICE_IN + self.output_tokens / 1e6 * config.LLM_PRICE_OUT, 6)
+        # input_tokens в usage — только некэшированная часть; запись кэша 1.25x, чтение по своей цене
+        cost = (self.input_tokens * config.LLM_PRICE_IN
+                + self.cache_write_tokens * config.LLM_PRICE_IN * 1.25
+                + self.cache_read_tokens * config.LLM_PRICE_CACHE_READ
+                + self.output_tokens * config.LLM_PRICE_OUT) / 1e6
+        return round(cost, 6)
 
 
 def _strip(e: dict) -> dict:
@@ -141,18 +151,23 @@ class ClaudeJudge:
             parts.append(f"- expected-but-missing near [{m['index']}] ({m.get('why', '')})")
         return "\n".join(parts) or "- (no candidate spans found by rules)"
 
+    def build_messages(self, ctx: Ctx, crit: dict, hint: dict) -> list[dict]:
+        # Префикс (system + транскрипт) одинаков для всех критериев диалога -> кэшируется;
+        # критерий и подсказки — в конце, после точки кэша.
+        shared = (f"Conversation language: {ctx.language}. Channel: {ctx.channel}.\n\n"
+                  f"Transcript (index, timestamp, speaker, text):\n{self._transcript(ctx)}")
+        task = f"{self._criterion_block(crit)}\n\nRetriever hints:\n{self._hints(hint)}"
+        return [{"role": "user", "content": [
+            {"type": "text", "text": shared, "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": task},
+        ]}]
+
     def judge(self, ctx: Ctx, crit: dict, hint: dict, usage: Usage) -> dict:
-        user = (
-            f"Conversation language: {ctx.language}. Channel: {ctx.channel}.\n\n"
-            f"{self._criterion_block(crit)}\n\n"
-            f"Retriever hints:\n{self._hints(hint)}\n\n"
-            f"Transcript (index, timestamp, speaker, text):\n{self._transcript(ctx)}"
-        )
         kwargs = dict(
             model=self.model,
             max_tokens=4000,
             system=self.system,
-            messages=[{"role": "user", "content": user}],
+            messages=self.build_messages(ctx, crit, hint),
             output_config={"effort": config.LLM_EFFORT,
                            "format": {"type": "json_schema", "schema": self._schema(crit)}},
         )
@@ -162,7 +177,9 @@ class ClaudeJudge:
                 resp = self.client.beta.messages.create(betas=["server-side-fallback-2026-07-01"], fallbacks="default", **kwargs)
             else:
                 resp = self.client.messages.create(**kwargs)
-            usage.add(resp.usage.input_tokens, resp.usage.output_tokens)
+            u = resp.usage
+            usage.add(u.input_tokens, u.output_tokens,
+                      getattr(u, "cache_creation_input_tokens", 0) or 0, getattr(u, "cache_read_input_tokens", 0) or 0)
             if resp.stop_reason == "refusal":
                 raise RuntimeError("model refusal")
             text = next(b.text for b in resp.content if b.type == "text")
