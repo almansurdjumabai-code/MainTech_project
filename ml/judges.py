@@ -56,6 +56,7 @@ class Usage:
     cache_write_tokens: int = 0
     cache_read_tokens: int = 0
     result_cache_hits: int = 0  # критерии, взятые из кэша ответов (без вызова API)
+    prices: tuple | None = None  # (вход, выход, чтение кэша) $/1M; None — цены Claude из env
 
     def add(self, input_tokens: int, output_tokens: int, cache_write: int = 0, cache_read: int = 0) -> None:
         # судьи по критериям работают в потоках
@@ -78,10 +79,11 @@ class Usage:
     @property
     def cost_usd(self) -> float:
         # input_tokens в usage — только некэшированная часть; запись кэша 1.25x, чтение по своей цене
-        cost = (self.input_tokens * config.LLM_PRICE_IN
-                + self.cache_write_tokens * config.LLM_PRICE_IN * 1.25
-                + self.cache_read_tokens * config.LLM_PRICE_CACHE_READ
-                + self.output_tokens * config.LLM_PRICE_OUT) / 1e6
+        p_in, p_out, p_cache = self.prices or (config.LLM_PRICE_IN, config.LLM_PRICE_OUT, config.LLM_PRICE_CACHE_READ)
+        cost = (self.input_tokens * p_in
+                + self.cache_write_tokens * p_in * 1.25
+                + self.cache_read_tokens * p_cache
+                + self.output_tokens * p_out) / 1e6
         return round(cost, 6)
 
 
@@ -118,6 +120,7 @@ def _safe(text: str) -> str:
 class ClaudeJudge:
     name = "anthropic"
     use_hints = True  # False — режим «LLM only» для сравнения в eval
+    prices = None  # None — цены Claude из env (LLM_PRICE_*)
 
     def __init__(self, model: str | None = None):
         import anthropic  # импорт тут: без ключа модуль не нужен
@@ -343,13 +346,26 @@ class ClaudeJudge:
         return out
 
 
+def _compat_ready() -> bool:
+    # локальной Ollama ключ не нужен
+    return bool(config.OPENAI_COMPAT_API_KEY) or "localhost" in config.OPENAI_COMPAT_BASE_URL or "127.0.0.1" in config.OPENAI_COMPAT_BASE_URL
+
+
 def make_judge(mode: str | None = None):
-    """mode: auto | anthropic | rules (по умолчанию из env LLM_PROVIDER)."""
+    """mode: auto | anthropic | openai_compat | rules (по умолчанию из env LLM_PROVIDER).
+    auto: Claude, если есть ANTHROPIC_API_KEY; иначе OpenAI-совместимый (Gemini и др.), если есть его ключ; иначе правила."""
     mode = (mode or config.LLM_PROVIDER or "auto").lower()
     if mode == "rules":
         return RuleJudge()
-    if config.ANTHROPIC_API_KEY:
+    if mode in ("auto", "anthropic") and config.ANTHROPIC_API_KEY:
         return ClaudeJudge()
-    if mode == "anthropic":
-        log.warning("LLM_PROVIDER=anthropic, но ANTHROPIC_API_KEY пуст — использую rule-based")
+    if mode in ("auto", "openai_compat") and _compat_ready():
+        from .openai_compat import OpenAICompatJudge
+        return OpenAICompatJudge()
+    if mode != "auto":
+        log.warning("LLM_PROVIDER=%s, но ключ провайдера пуст — использую rule-based", mode)
     return RuleJudge()
+
+
+def is_llm(judge) -> bool:
+    return isinstance(judge, ClaudeJudge)

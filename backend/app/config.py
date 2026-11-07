@@ -14,7 +14,7 @@ if not DB_PATH.is_absolute():
 CHECKLIST_DIR = ROOT / "configs" / "checklists"
 PROMPTS_DIR = ROOT / "prompts"
 
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "auto").lower()  # auto | anthropic | rules
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "auto").lower()  # auto | anthropic | openai_compat | rules
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
 LLM_MODEL = os.getenv("LLM_MODEL", "claude-sonnet-5-5")
 LLM_EFFORT = os.getenv("LLM_EFFORT", "low")
@@ -30,6 +30,16 @@ LLM_STRATEGY = os.getenv("LLM_STRATEGY", "per_criterion").lower()
 LLM_RESULT_CACHE = os.getenv("LLM_RESULT_CACHE", "1").lower() not in ("0", "false", "no")
 LLM_TIMEOUT_SEC = float(os.getenv("LLM_TIMEOUT_SEC", "120"))
 LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "3"))  # SDK: экспоненциальный backoff на 429/5xx/сеть
+
+# OpenAI-совместимый провайдер (по умолчанию — бесплатный Gemini API из Google AI Studio)
+OPENAI_COMPAT_BASE_URL = os.getenv("OPENAI_COMPAT_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai").strip()
+OPENAI_COMPAT_API_KEY = os.getenv("OPENAI_COMPAT_API_KEY", "").strip()
+OPENAI_COMPAT_MODEL = os.getenv("OPENAI_COMPAT_MODEL", "gemini-flash-latest")
+OPENAI_COMPAT_JSON_MODE = os.getenv("OPENAI_COMPAT_JSON_MODE", "json_schema")  # json_schema | json_object
+OPENAI_COMPAT_PRICE_IN = float(os.getenv("OPENAI_COMPAT_PRICE_IN", "0"))  # бесплатный тариф = 0
+OPENAI_COMPAT_PRICE_OUT = float(os.getenv("OPENAI_COMPAT_PRICE_OUT", "0"))
+# пауза между запросами: бесплатные тарифы ограничивают запросы в минуту (15 RPM -> 4 с)
+OPENAI_COMPAT_MIN_INTERVAL_SEC = float(os.getenv("OPENAI_COMPAT_MIN_INTERVAL_SEC", "4"))
 
 DEFAULT_CHECKLIST_ID = os.getenv("DEFAULT_CHECKLIST_ID", "cqa-default-v1")
 

@@ -68,11 +68,16 @@ def main(argv=None) -> int:
     # 3. модель и стоимость
     if config.LLM_PROVIDER == "rules":
         r.line("WARN", "LLM_PROVIDER=rules — оценка только правилами")
-    elif not config.ANTHROPIC_API_KEY:
-        r.line("WARN", f"ANTHROPIC_API_KEY пуст — будет rule-based; новому критерию без LLM нужны keywords (модель в env: {config.LLM_MODEL})")
     else:
-        r.line("OK", f"LLM: {config.LLM_MODEL}, effort={config.LLM_EFFORT}, strategy={config.LLM_STRATEGY}, кэш ответов={config.LLM_RESULT_CACHE}")
-    exp = PRICES.get(config.LLM_MODEL)
+        from ml.judges import is_llm, make_judge
+        j = make_judge()
+        if not is_llm(j):
+            r.line("WARN", "нет ключа LLM (ANTHROPIC_API_KEY / OPENAI_COMPAT_API_KEY) — будет rule-based; новому критерию без LLM нужны keywords")
+        else:
+            r.line("OK", f"LLM: {j.name} / {j.model}, strategy={config.LLM_STRATEGY}, кэш ответов={config.LLM_RESULT_CACHE}")
+            if j.name == "openai_compat" and config.LLM_STRATEGY != "single_call":
+                r.line("WARN", "бесплатный тариф: рекомендуется LLM_STRATEGY=single_call (1 запрос на диалог вместо 8)")
+    exp = PRICES.get(config.LLM_MODEL) if config.ANTHROPIC_API_KEY else None
     got = (config.LLM_PRICE_IN, config.LLM_PRICE_OUT, config.LLM_PRICE_CACHE_READ)
     if exp and any(e is not None and abs(e - g) > 1e-9 for e, g in zip(exp, got)):
         r.line("WARN", f"цены LLM_PRICE_* {got} не совпадают с {config.LLM_MODEL} {exp} — cost_usd будет неверным")

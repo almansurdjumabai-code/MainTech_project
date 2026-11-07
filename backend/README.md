@@ -143,6 +143,10 @@ Rule-based сейчас совпадает с этой разметкой на 9
 
 ## Модель и стоимость
 
+**Бесплатно:** `OPENAI_COMPAT_API_KEY` (ключ Gemini из https://aistudio.google.com → Get API key) в `backend/.env`, `LLM_STRATEGY=single_call`.
+Тот же адаптер работает с Groq, OpenRouter и локальной Ollama — меняются `OPENAI_COMPAT_BASE_URL` / `OPENAI_COMPAT_MODEL`.
+Доступные модели: `backend\.venv\Scripts\python -m ml.live_smoke --list-models`. Если задан `ANTHROPIC_API_KEY`, в режиме `auto` приоритет у Claude.
+
 Подробно и с методикой: [docs/demo/cost-report.md](docs/demo/cost-report.md). Экономия без потери качества: кэш префикса, кэш ответов `LLM_RESULT_CACHE=1` (повтор — $0, замена одного критерия — 1 вызов вместо 8), `LLM_STRATEGY=single_call` (все критерии одним вызовом; включать после сравнения в eval).
 
 | Модель (`LLM_MODEL`) | Цена, $ / 1M токенов (вход / выход) | Одна полная оценка (8 вызовов) |

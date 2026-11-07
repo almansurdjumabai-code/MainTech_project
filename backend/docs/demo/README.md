@@ -26,7 +26,7 @@
 | Замена критерия и применение нового чек-листа | Промпт собирается из JSON; кэш ответов — платим только за новый критерий | Без ключа новому критерию нужны `keywords` | Сценарий C, `test_result_cache_skips_paid_calls_…` |
 | Интерфейс HTML/CSS/JS, адаптация под Dynamics 365 | Не моя часть (фронтенд команды) | **Главный незакрытый блок для защиты** | — |
 | README с шагами запуска | `backend/README.md` | — | — |
-| FAQ: модель и примерная стоимость одной оценки | Claude Sonnet 5.5 (`claude-sonnet-5-5`); `pipeline.cost_usd` по usage; оценка $0.03–0.07 за диалог | Факт после live smoke | [cost-report.md](cost-report.md) |
+| FAQ: модель и примерная стоимость одной оценки | Бесплатно: Gemini Flash (OpenAI-совместимый API) — $0; платная опция: Claude Sonnet 5.5 — ≈ $0.03–0.07 за диалог (расчёт); `pipeline.cost_usd` по usage | Факт после live smoke | [cost-report.md](cost-report.md) |
 | CORS: данные организаторов — через сервер | `POST /ingest` (сервер), CORS для localhost и file:// | — | — |
 
 ## Что даст максимальный прирост к защите

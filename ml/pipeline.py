@@ -27,7 +27,7 @@ def evaluate_conversation(conversation: dict, checklist: dict, judge=None) -> di
     judge = judge or make_judge()
     ctx = build_ctx(conversation)
     hints = retrieve(ctx, checklist)  # Pass A
-    usage = Usage()
+    usage = Usage(prices=getattr(judge, "prices", None))
 
     def run(crit):
         return crit["id"], judge.judge(ctx, crit, hints[crit["id"]], usage)  # Pass B

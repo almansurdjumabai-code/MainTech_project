@@ -37,7 +37,7 @@ def _agreement(crit: dict, answer, rule_answer) -> str | None:
 
 def annotate(checklist: dict, judgments: dict[str, dict], hints: dict[str, dict], judge_name: str) -> None:
     """Добавляет в каждый judgment: rule_answer, agreement, confidence, needs_review, review_reasons."""
-    llm = judge_name == "anthropic"
+    llm = judge_name != "rules"
     for crit in checklist["criteria"]:
         j, hint = judgments[crit["id"]], hints[crit["id"]]
         source = str(j.get("source") or "")

@@ -23,7 +23,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from backend.app import config, db, service
-from ml.judges import ClaudeJudge, RuleJudge
+from ml.judges import RuleJudge, is_llm, make_judge
 from ml.pipeline import evaluate_conversation
 
 ROOT = Path(__file__).resolve().parent
@@ -32,9 +32,9 @@ ROOT = Path(__file__).resolve().parent
 def make_mode_judge(mode: str):
     if mode == "rules":
         return RuleJudge()
-    if not config.ANTHROPIC_API_KEY:
+    j = make_judge()  # активный LLM-провайдер из env: Claude или OpenAI-совместимый (Gemini и др.)
+    if not is_llm(j):
         return None
-    j = ClaudeJudge()
     j.use_hints = mode != "llm_only"
     return j
 
@@ -241,7 +241,7 @@ def main(argv=None) -> int:
     for mode in modes:
         r = run_mode(mode, gold, checklist)
         if r is None:
-            print(f"{mode}: пропущен — нет ANTHROPIC_API_KEY (LLM-путь не запускался)", file=sys.stderr)
+            print(f"{mode}: пропущен — нет ключа LLM-провайдера (LLM-путь не запускался)", file=sys.stderr)
             continue
         r["metrics"] = metrics(r["rows"], checklist)
         results.append(r)
