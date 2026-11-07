@@ -119,3 +119,50 @@ def test_cli_batch(client, capsys):
     rc = batch_cli.main(["--group-id", "TEST", "--ids", "t-ru-happy", "t-kz-na-id", "--force", "--mode", "rules"])
     out = capsys.readouterr().out
     assert rc == 0 and "done=2" in out and "[2/2]" in out
+
+
+def test_duplicate_background_batch_is_deduplicated(client, monkeypatch):
+    import threading as th
+
+    gate = th.Event()
+    orig = service.evaluate_one
+
+    def slow(*a, **kw):
+        gate.wait(5)  # держим первый batch «в работе»
+        return orig(*a, **kw)
+
+    monkeypatch.setattr(service, "evaluate_one", slow)
+    body = {"group_id": "TEST", "checklist_id": "cqa-default-v1", "force": True}
+    first = client.post("/evaluate/batch", json=body).json()
+    second = client.post("/evaluate/batch", json=body).json()
+    assert second["job_id"] == first["job_id"] and second["deduplicated"] is True
+    gate.set()
+    for t in th.enumerate():
+        if t.name == f"batch-{first['job_id']}":
+            t.join(10)
+    done = client.get(f"/evaluate/batch/{first['job_id']}").json()
+    assert done["status"] == "finished" and done["done"] == 5
+
+
+def test_batch_partial_failure_keeps_other_results(client, monkeypatch):
+    orig = service.evaluate_one
+
+    def flaky(conv, *a, **kw):
+        if conv["conversation_id"] == "t-kz-na-id":
+            raise RuntimeError("LLM down")
+        return orig(conv, *a, **kw)
+
+    monkeypatch.setattr(service, "evaluate_one", flaky)
+    job = client.post("/evaluate/batch", json={"group_id": "TEST", "checklist_id": "cqa-default-v1", "force": True,
+                                               "background": False}).json()
+    assert job["failed"] == 1 and job["done"] == 4 and "t-kz-na-id" in job["errors"][0]
+    # сбой переоценки не стирает прежний результат этого диалога
+    assert db.result_exists("t-kz-na-id", "cqa-default-v1")
+    assert client.get("/results/t-kz-na-id").json()["overall"] is not None
+
+
+def test_invalid_payloads_rejected(client):
+    assert client.post("/evaluate", json={}).status_code == 422
+    assert client.post("/evaluate", json={"conversation_id": "nope"}).status_code == 404
+    assert client.post("/evaluate", json={"transcript": [{"speaker": "hacker", "text": "x"}]}).status_code == 422
+    assert client.post("/results/999999/appeals", json={"criterion_id": "C1", "comment": "x"}).status_code == 404

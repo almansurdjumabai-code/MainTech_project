@@ -171,8 +171,9 @@ def stats(group_id: Optional[str] = None, checklist_id: Optional[str] = None):
 
 
 @app.get("/results")
-def results(group_id: Optional[str] = None, checklist_id: Optional[str] = None):
-    items = db.list_results(group_id, checklist_id)
+def results(group_id: Optional[str] = None, checklist_id: Optional[str] = None, needs_review: Optional[bool] = None):
+    """needs_review=true — очередь автоматически отмеченных для ручной проверки результатов."""
+    items = db.list_results(group_id, checklist_id, needs_review)
     return {"total": len(items), "items": items}
 
 

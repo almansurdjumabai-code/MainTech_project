@@ -75,6 +75,14 @@ CREATE TABLE IF NOT EXISTS reviews (
     reason       TEXT NOT NULL,
     created_at   TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS llm_cache (
+    cache_key    TEXT PRIMARY KEY,
+    model        TEXT NOT NULL,
+    criterion_id TEXT NOT NULL,
+    body         TEXT NOT NULL,
+    created_at   TEXT NOT NULL
+);
 """
 
 
@@ -267,11 +275,16 @@ def get_results_for_conversation(cid: str, checklist_id: str | None = None) -> l
         return [loads(r["body"]) for r in c.execute(q, args).fetchall()]
 
 
-def list_results(group_id: str | None = None, checklist_id: str | None = None) -> list[dict]:
+def list_results(group_id: str | None = None, checklist_id: str | None = None, needs_review: bool | None = None) -> list[dict]:
     q = """SELECT r.result_id, r.conversation_id, r.checklist_id, r.status, r.overall, r.critical_error, r.updated_at,
-                  c.language, c.channel, c.group_id
+                  c.language, c.channel, c.group_id,
+                  coalesce(json_extract(r.body, '$.review_required'), 0) AS review_required,
+                  json_extract(r.body, '$.review_criteria') AS review_criteria
            FROM results r LEFT JOIN conversations c ON c.conversation_id=r.conversation_id WHERE 1=1"""
     args: list = []
+    if needs_review is not None:
+        q += " AND coalesce(json_extract(r.body, '$.review_required'), 0)=?"
+        args.append(int(needs_review))
     if group_id:
         q += " AND c.group_id=?"
         args.append(group_id)
@@ -281,7 +294,8 @@ def list_results(group_id: str | None = None, checklist_id: str | None = None) -
     q += " ORDER BY r.conversation_id"
     with tx() as c:
         rows = c.execute(q, args).fetchall()
-    return [{**dict(r), "critical_error": bool(r["critical_error"])} for r in rows]
+    return [{**dict(r), "critical_error": bool(r["critical_error"]), "review_required": bool(r["review_required"]),
+             "review_criteria": loads(r["review_criteria"]) or []} for r in rows]
 
 
 # ---------- appeals / reviews ----------
@@ -359,6 +373,18 @@ def all_result_bodies(group_id: str | None = None, checklist_id: str | None = No
     q += " ORDER BY r.conversation_id"
     with tx() as c:
         return [loads(r["body"]) for r in c.execute(q, args).fetchall()]
+
+
+def llm_cache_get(key: str) -> dict | None:
+    with tx() as c:
+        r = c.execute("SELECT body FROM llm_cache WHERE cache_key=?", (key,)).fetchone()
+    return loads(r["body"]) if r else None
+
+
+def llm_cache_put(key: str, model: str, criterion_id: str, body: dict) -> None:
+    with tx() as c:
+        c.execute("INSERT OR REPLACE INTO llm_cache(cache_key, model, criterion_id, body, created_at) VALUES(?,?,?,?,?)",
+                  (key, model, criterion_id, dumps(body), now()))
 
 
 def insert_review(rid: int, appeal_id: int | None, criterion_id: str, decision: str,

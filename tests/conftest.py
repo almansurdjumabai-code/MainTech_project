@@ -8,6 +8,7 @@ _tmp = tempfile.mkdtemp(prefix="cqa-test-")
 os.environ["CQA_DB_PATH"] = str(Path(_tmp) / "test.db")
 os.environ["LLM_PROVIDER"] = "rules"
 os.environ["ANTHROPIC_API_KEY"] = ""
+os.environ["LLM_RESULT_CACHE"] = "0"  # тесты с фейковым клиентом не должны делить кэш ответов
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 

@@ -12,6 +12,7 @@ from collections import Counter, defaultdict
 
 from ml.judges import answer_label, make_judge
 from ml.pipeline import _to_contract, evaluate_conversation
+from ml.review import summarize as review_summary
 from scoring import aggregate, normalize_answer
 from scoring.checklist import Checklist, slugify
 
@@ -177,17 +178,34 @@ def new_job(group_id: str, checklist_id: str, ids: list[str]) -> dict:
             "started_at": db.now(), "finished_at": None}
 
 
+_batch_lock = threading.Lock()
+
+
+def _running_job(group_id: str, checklist_id: str) -> dict | None:
+    alive = {t.name for t in threading.enumerate()}
+    for job in db.list_jobs(limit=50):
+        if (job.get("group_id") == group_id and job.get("checklist_id") == checklist_id
+                and job.get("status") == "running" and f"batch-{job['job_id']}" in alive):
+            return job
+    return None
+
+
 def start_batch(payload) -> dict:
     checklist = get_checklist_or_404(payload.checklist_id)
     ids = db.conversation_ids(payload.group_id)
     if not ids:
         raise NotFound(f"no conversations for group_id={payload.group_id} (сначала POST /ingest?group_id=...)")
-    job = new_job(payload.group_id, checklist["id"], ids)
-    if payload.background:
-        db.save_job(job)
-        threading.Thread(target=run_batch, args=(job, ids, checklist, payload.mode, payload.force),
-                         name=f"batch-{job['job_id']}", daemon=True).start()
-        return job
+    with _batch_lock:
+        # повторный клик «Оценить всё» не запускает второй платный прогон того же набора
+        running = _running_job(payload.group_id, checklist["id"])
+        if running:
+            return {**running, "deduplicated": True}
+        job = new_job(payload.group_id, checklist["id"], ids)
+        if payload.background:
+            db.save_job(job)
+            threading.Thread(target=run_batch, args=(job, ids, checklist, payload.mode, payload.force),
+                             name=f"batch-{job['job_id']}", daemon=True).start()
+            return job
     return run_batch(job, ids, checklist, payload.mode, payload.force)
 
 
@@ -300,6 +318,10 @@ def stats(group_id: str | None = None, checklist_id: str | None = None) -> dict:
         "criteria": [{"id": d["id"], "name": d["name"], "answers": dict(d["answers"]),
                       "na_rate": round(d["answers"].get("NA", 0) / max(1, sum(d["answers"].values())), 3),
                       "avg_points": avg(d["points"])} for d in per_crit.values()],
+        "review_required": sum(1 for r in results if r.get("review_required")),
+        "review_rate": round(sum(1 for r in results if r.get("review_required")) / len(results), 3) if results else None,
+        "review_reasons": dict(sum((Counter(r.get("review_reasons") or {}) for r in results), Counter())),
+        "agreement_rate": avg([r.get("agreement_rate") for r in results]),
         "open_appeals": len(db.list_appeals("open")),
         "llm_cost_usd": round(sum(r.get("pipeline", {}).get("cost_usd", 0) for r in results), 4),
     }
@@ -363,6 +385,7 @@ def review(rid: int, payload) -> dict:
     agg = aggregate(checklist, judgments)
     final = {"criteria": [_to_contract(c) for c in agg["criteria"]], "sections": agg["sections"], "overall": agg["overall"],
              "max_overall": agg["max_overall"], "critical_error": agg["critical_error"], "critical_criteria": agg["critical_criteria"]}
+    final.update(review_summary(final["criteria"]))  # проверенный человеком критерий больше не требует проверки
 
     resolved = db.resolve_open_appeals(rid, payload.criterion_id)
     appeal_id = payload.appeal_id or (resolved[0] if resolved else None)
@@ -374,7 +397,8 @@ def review(rid: int, payload) -> dict:
             a["status"], a["resolved_at"] = "resolved", rev["created_at"]
     result.setdefault("reviews", []).append(rev)
     result["final"] = final
-    result.update({k: final[k] for k in ("criteria", "sections", "overall", "max_overall", "critical_error", "critical_criteria")})
+    result.update({k: final[k] for k in ("criteria", "sections", "overall", "max_overall", "critical_error", "critical_criteria",
+                                         "review_required", "review_criteria", "agreement_rate", "review_reasons")})
     result["status"] = "reviewed" if not any(a["status"] == "open" for a in result.get("appeals", [])) else "appealed"
     db.update_result(rid, result)
     return {"review": rev, "result": result}
